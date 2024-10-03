@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戀上碳追蹤</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>戀上碳追蹤</h1>
+            <div class="profile-container">
+                <a href="#" id="profileLink" class="profile-link">
+                    <img src="nickstar.png" alt="User Profile" class="profile-pic">
+                </a>
+                <div id="profileMenu" class="profile-menu">
+                    <ul>
+                        <li><a href="#">設定</a></li>
+                        <li><a href="#" id="logoutLink">登出</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+        <main>
+            <section class="info-section">
+                <h2>用電資訊</h2>
+                <div id="powerInfo" class="info-box">
+                    <!-- 用電資訊會顯示在這裡 -->
+                </div>
+            </section>
+            <section class="message-section">
+                <h2>區塊鏈訊息</h2>
+                <div id="blockchainMessages" class="info-box">
+                    <!-- 區塊鏈訊息會顯示在這裡 -->
+                </div>
+                <button id="refreshButton">刷新訊息</button>
+            </section>
+        </main>
+        <footer>
+            <p>&copy; 2024 戀上碳追蹤. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

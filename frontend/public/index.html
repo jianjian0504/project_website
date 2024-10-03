@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            text-align: left;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+            color: #333;
+        }
+
+        input:focus {
+            border-color: #4facfe;
+            outline: none;
+            box-shadow: 0 0 5px rgba(79, 172, 254, 0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4facfe;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #00f2fe;
+        }
+
+        #login-message {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .toggle-link {
+            cursor: pointer;
+            color: #00f2fe;
+            text-decoration: underline;
+            margin-top: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>登入</h2>
+        <form id="loginForm">
+            <label for="username">帳號:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">密碼:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">登入</button>
+        </form>
+        <div id="login-message" style="margin-top: 10px;"></div>
+        <a href="register.html" class="toggle-link">還沒有帳號？註冊</a> 
+    </div>
+
+    <script>
+        //登入表單提交事件
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new URLSearchParams(new FormData(event.target));
+            const messageDiv = document.getElementById('login-message');
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    messageDiv.style.color = 'green';
+                    messageDiv.textContent = '登入成功！即將跳轉...';
+                    setTimeout(() => window.location.href = '/main.html', 1500);
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = '登入失敗: ' + result.message;
+                }
+            } catch (error) {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = '登入過程中出現錯誤，請稍後再試。';
+            }
+        });
+    </script>
+</body>
+</html>
