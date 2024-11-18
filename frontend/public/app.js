@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshButton = document.getElementById('refreshButton');
 
     // 建立 WebSocket 連接，與伺服器進行即時通訊
-    const socket = new WebSocket('ws://localhost:4000');
+    const socket = new WebSocket('ws://localhost:3000');
 
     // 當 WebSocket 連線成功時，顯示確認訊息
     socket.addEventListener('open', () => {
@@ -78,9 +78,16 @@ document.getElementById('registerForm').addEventListener('submit', function(even
     const formData = new FormData(this); // 取得表單資料
     const data = {
         username: formData.get('username'), // 取得使用者輸入的帳號
-        password: formData.get('password')  // 取得使用者輸入的密碼
+        password: formData.get('password'),  // 取得使用者輸入的密碼
+        confirmPassword: formData.get('confirm-password') // 取得使用者輸入的確認密碼
     };
-
+    
+    // 檢查密碼和確認密碼是否一致
+    if (data.password !== data.confirmPassword) {
+        alert('密碼不一致，請重新輸入！');
+        return; // 停止進一步的處理
+    }
+    
     // 使用 Fetch API 呼叫後端 API 進行註冊請求
     fetch('/register', {
         method: 'POST',
@@ -101,4 +108,5 @@ document.getElementById('registerForm').addEventListener('submit', function(even
     .catch(error => {
         console.error('Error during registration:', error); // 在主控台顯示錯誤訊息
     });
-});
+})
+

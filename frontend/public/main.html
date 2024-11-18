@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>戀上碳追蹤</title>
     <link rel="stylesheet" href="styles.css">
-</head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
 <body>
     <div class="container">
         <header>
@@ -25,9 +25,7 @@
         <main>
             <section class="info-section">
                 <h2>用電資訊</h2>
-                <div id="powerInfo" class="info-box">
-                    <!-- 用電資訊會顯示在這裡 -->
-                </div>
+                <canvas id="powerChart" width="400" height="200"></canvas>
             </section>
             <section class="message-section">
                 <h2>區塊鏈訊息</h2>
@@ -42,6 +40,6 @@
         </footer>
     </div>
 
-    <script src="app.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>

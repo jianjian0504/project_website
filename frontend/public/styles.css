@@ -140,3 +140,12 @@ footer {
     border-radius: 5px;
 }
 
+canvas {
+    width: 100% !important; /* 確保 canvas 填滿寬度 */
+    height: 400px !important; /* 固定高度，避免無法顯示 */
+    background-color: white; /* 可選：給 canvas 添加背景，方便確認它是否被渲染 */
+    border: 1px solid #ddd; /* 可選：給 canvas 添加邊框，確認邊界 */
+    z-index: 100;
+    
+}
+
