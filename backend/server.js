@@ -6,7 +6,7 @@ const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const app = express();
 
-const PORT = 3000;
+const PORT = 4000;
 
 // ======== MySQL 資料庫連接設置 ========
 const db = mysql.createConnection({

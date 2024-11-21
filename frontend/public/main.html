@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>戀上碳追蹤</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 <body>
     <div class="container">
         <header>
@@ -25,7 +26,7 @@
         <main>
             <section class="info-section">
                 <h2>用電資訊</h2>
-                <canvas id="powerChart" width="400" height="200"></canvas>
+                <canvas id="powerChart" width="400" height="200"></canvas> <!-- 用來顯示圖表的 <canvas> -->
             </section>
             <section class="message-section">
                 <h2>區塊鏈訊息</h2>
@@ -40,6 +41,16 @@
         </footer>
     </div>
 
-    <script src="main.js"></script>
+    <!-- 動態圖表的 JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('powerChart').getContext('2d');
+
+            // 初始化 Chart.js 圖表
+                           
+        });
+    </script>
+
+    <script src="main.js"></script> <!-- 引入其他 JavaScript 檔案 -->
 </body>
-</html>
+</html>是我的main.html
