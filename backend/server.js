@@ -4,8 +4,12 @@ const session = require('express-session');
 const path = require('path');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
-const app = express();
+const http = require('http');  // 需要 http 模組來啟動伺服器
+const WebSocket = require('ws');  // 引入 ws 模組
+const os = require('os');
+const networkInterfaces = os.networkInterfaces();
 
+const app = express();
 const PORT = 4000;
 
 // ======== MySQL 資料庫連接設置 ========
@@ -130,22 +134,6 @@ app.post('/power-data', isAuthenticated, (req, res) => {
     });
 });
 
-// ======== 模擬數據上傳功能 API ========
-app.post('/mock-power-data', (req, res) => {
-    const userId = req.session.user ? req.session.user.id : 1; // 預設測試用戶 ID 為 1
-    const { powerUsage } = req.body;
-
-    // 模擬每秒傳送一次數據
-    setInterval(() => {
-        const query = 'INSERT INTO power_data (user_id, power_usage, date) VALUES (?, ?, NOW())';
-        db.query(query, [userId, powerUsage], (err) => {
-            if (err) console.error('模擬數據儲存失敗:', err);
-        });
-    }, 1000);
-
-    res.json({ success: true, message: '模擬數據上傳已開始' });
-});
-
 // ======== 登出路由 ========
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -159,7 +147,82 @@ app.use((req, res) => {
     res.status(404).send('Not Found');
 });
 
-// ======== 啟動伺服器 ========
-app.listen(PORT, () => {
-    console.log(`伺服器正在運行於 http://localhost:${PORT}`);
+
+
+let apower = 0; // 在作用域頂部宣告變數，用來儲存來自 WebSocket 的 apower 值
+let total_kWh=0;
+// ======== WebSocket 設置 ========
+
+// 創建 HTTP 伺服器來支持 WebSocket
+const server = http.createServer(app);
+
+// 創建 WebSocket 伺服器
+const wss = new WebSocket.Server({ server });
+
+// 當 WebSocket 連線建立時
+wss.on('connection', (ws) => {
+    console.log('有新的 WebSocket 連線');
+
+    // 處理 WebSocket 傳來的訊息
+    ws.on('message', (message) => {
+        try {
+            // 解析收到的訊息
+            const data = JSON.parse(message);
+
+            // 檢查是否包含 `result.apower` 並提取其值
+            if (data.result && typeof data.result.apower === 'number') {
+                apower = data.result.apower;  // 更新 apower 的值
+                console.log(`更新的 apower 值: ${apower}`);
+            } else {
+                console.error('訊息中不包含有效的 apower 資料');
+                ws.send('無效的資料格式');
+            }
+
+            if (data.result && typeof data.result.total_kWh === 'number') {
+                total_kWh = data.result.total_kWh;  // 更新 apower 的值
+                console.log(`更新的 total_kWh 值: ${total_kWh}`);
+            } else {
+                console.error('訊息中不包含有效的 total_kwh 資料');
+                ws.send('無效的資料格式');
+            }
+        } catch (error) {
+            console.error('無法解析訊息:', error);
+            ws.send('解析錯誤');
+        }
+    });
+
+    // 當 WebSocket 連線關閉時
+    ws.on('close', () => {
+        console.log('客戶端已斷線');
+    });
 });
+
+// 創建另一個 WebSocket 伺服器，用來向前端傳送 apower 數據
+const wss2 = new WebSocket.Server({ port: 8080 });
+
+wss2.on('connection', (ws) => {
+    console.log('前端已連線');
+    
+    // 定時每秒傳送一次 apower 數據
+    setInterval(() => {
+        ws.send(JSON.stringify({ apower }));
+        ws.send(JSON.stringify({ total_kWh}));
+    }, 5000); // 每 1 秒發送一次 apower 值
+});
+
+// ======== 啟動伺服器 ========
+function getLocalIPAddress() {
+    for (const iface of Object.values(networkInterfaces)) {
+        for (const details of iface) {
+            if (details.family === 'IPv4' && !details.internal) {
+                return details.address;
+            }
+        }
+    }
+    return 'localhost'; // 如果無法找到 IP，就返回 localhost
+}
+server.listen(PORT, '0.0.0.0', () => {
+    const localIP = getLocalIPAddress();
+    console.log(`伺服器運行於 http://${localIP}:${PORT}`);
+});
+

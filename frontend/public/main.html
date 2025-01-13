@@ -25,32 +25,28 @@
         </header>
         <main>
             <section class="info-section">
-                <h2>用電資訊</h2>
-                <canvas id="powerChart" width="400" height="200"></canvas> <!-- 用來顯示圖表的 <canvas> -->
+                <h2>用電資訊與碳排放</h2>
+                <label for="chartSelector">選擇數據類型：</label>
+                <select id="chartSelector">
+                    <option value="power">用電資訊</option>
+                    <option value="carbon">碳排放</option>
+                </select>
+                <canvas id="dataChart" width="400" height="200"></canvas>
+
             </section>
-            <section class="message-section">
-                <h2>區塊鏈訊息</h2>
-                <div id="blockchainMessages" class="info-box">
-                    <!-- 區塊鏈訊息會顯示在這裡 -->
+            <section class="statistics-section">
+                <h2>統計數據</h2>
+                <div id="statistics" class="info-box">
+                    <p>總用電度數：<span id="totalPower">0</span> 度</p>
+                    <p>總碳排放量：<span id="totalCarbon">0</span> 公斤</p>
                 </div>
-                <button id="refreshButton">刷新訊息</button>
             </section>
         </main>
         <footer>
             <p>&copy; 2024 戀上碳追蹤. All rights reserved.</p>
         </footer>
     </div>
-
-    <!-- 動態圖表的 JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const ctx = document.getElementById('powerChart').getContext('2d');
-
-            // 初始化 Chart.js 圖表
-                           
-        });
-    </script>
-
-    <script src="main.js"></script> <!-- 引入其他 JavaScript 檔案 -->
+    
+    <script src="main.js"></script>
 </body>
-</html>是我的main.html
+</html>

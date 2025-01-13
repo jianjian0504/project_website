@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
         body {
             display: flex;
             justify-content: center;
@@ -12,22 +14,48 @@
             height: 100vh;
             margin: 0;
             background: linear-gradient(to right, #4facfe, #00f2fe);
-            font-family: 'Arial', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
         }
 
         .container {
-            background: #fff;
-            padding: 20px 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px 50px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
             max-width: 400px;
             width: 100%;
             text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h2 {
             margin-bottom: 20px;
             color: #333;
+            font-weight: 600;
+            animation: slideIn 1s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         label {
@@ -35,39 +63,42 @@
             margin-bottom: 8px;
             text-align: left;
             color: #555;
+            font-weight: 300;
         }
 
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 5px;
             box-sizing: border-box;
             font-size: 14px;
             color: #333;
+            transition: all 0.3s ease;
         }
 
         input:focus {
             border-color: #4facfe;
             outline: none;
-            box-shadow: 0 0 5px rgba(79, 172, 254, 0.5);
+            box-shadow: 0 0 8px rgba(79, 172, 254, 0.5);
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            background: #4facfe;
+            padding: 14px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
             border: none;
             border-radius: 5px;
             color: white;
             font-size: 16px;
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: background 0.3s ease, transform 0.3s ease;
         }
 
         button:hover {
-            background: #00f2fe;
+            background: linear-gradient(to right, #00f2fe, #4facfe);
+            transform: scale(1.05);
         }
 
         #login-message {
