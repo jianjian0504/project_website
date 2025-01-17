@@ -11,13 +11,19 @@
     <div class="container">
         <header>
             <h1>戀上碳追蹤</h1>
+            <nav>
+                <ul>
+                    <li><a href="main.html">總覽</a></li>
+                    <li><a href="devices.html">裝置</a></li>
+                </ul>
+            </nav>
             <div class="profile-container">
                 <a href="#" id="profileLink" class="profile-link">
                     <img src="nickstar.png" alt="User Profile" class="profile-pic">
                 </a>
                 <div id="profileMenu" class="profile-menu">
                     <ul>
-                        <li><a href="#">設定</a></li>
+                        <li><a href="#" id="settingsLink">設定</a></li>
                         <li><a href="#" id="logoutLink">登出</a></li>
                     </ul>
                 </div>
@@ -31,8 +37,9 @@
                     <option value="power">用電資訊</option>
                     <option value="carbon">碳排放</option>
                 </select>
-                <canvas id="dataChart" width="400" height="200"></canvas>
-
+                <div class="chart-container">
+                    <canvas id="dataChart"></canvas>
+                </div>
             </section>
             <section class="statistics-section">
                 <h2>統計數據</h2>
@@ -41,12 +48,22 @@
                     <p>總碳排放量：<span id="totalCarbon">0</span> 公斤</p>
                 </div>
             </section>
+            <section class="settings-section" id="settingsSection" style="display: none;">
+                <h2>設定</h2>
+                <form id="settingsForm">
+                    <label for="email">電子郵件:</label>
+                    <input type="email" id="email" name="email" required>
+                    <label for="profilePic">上傳大頭照:</label>
+                    <input type="file" id="profilePic" name="profilePic" accept="image/*">
+                    <button type="submit">儲存設定</button>
+                </form>
+                <div id="settingsMessage"></div>
+            </section>
         </main>
         <footer>
             <p>&copy; 2024 戀上碳追蹤. All rights reserved.</p>
         </footer>
     </div>
-    
     <script src="main.js"></script>
 </body>
 </html>

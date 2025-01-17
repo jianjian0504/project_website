@@ -8,6 +8,8 @@ const http = require('http');  // 需要 http 模組來啟動伺服器
 const WebSocket = require('ws');  // 引入 ws 模組
 const os = require('os');
 const networkInterfaces = os.networkInterfaces();
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 const app = express();
 const PORT = 4000;
@@ -134,6 +136,46 @@ app.post('/power-data', isAuthenticated, (req, res) => {
     });
 });
 
+// ======== 新增裝置 API ========
+app.post('/devices', isAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
+    const { deviceName, deviceType } = req.body;
+
+    if (!deviceName || !deviceType) {
+        return res.status(400).json({ message: '請提供裝置名稱和類型' });
+    }
+
+    const query = 'INSERT INTO devices (user_id, device_name, device_type) VALUES (?, ?, ?)';
+    db.query(query, [userId, deviceName, deviceType], (err) => {
+        if (err) return res.status(500).json({ message: '新增裝置失敗' });
+        res.json({ success: true, message: '裝置已新增' });
+    });
+});
+
+// ======== 取得用戶裝置 API ========
+app.get('/devices', isAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
+
+    const query = 'SELECT * FROM devices WHERE user_id = ?';
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ message: '無法取得裝置資訊' });
+        res.json(results);
+    });
+});
+
+// ======== 設定表單提交 API ========
+app.post('/settings', isAuthenticated, upload.single('profilePic'), (req, res) => {
+    const userId = req.session.user.id;
+    const { email } = req.body;
+    const profilePic = req.file ? req.file.filename : null;
+
+    const query = 'UPDATE users SET email = ?, profile_pic = ? WHERE id = ?';
+    db.query(query, [email, profilePic, userId], (err) => {
+        if (err) return res.status(500).json({ message: '儲存失敗' });
+        res.json({ success: true, message: '設定已儲存' });
+    });
+});
+
 // ======== 登出路由 ========
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -206,8 +248,8 @@ wss2.on('connection', (ws) => {
     // 定時每秒傳送一次 apower 數據
     setInterval(() => {
         ws.send(JSON.stringify({ apower }));
-        ws.send(JSON.stringify({ total_kWh}));
-    }, 5000); // 每 1 秒發送一次 apower 值
+        ws.send(JSON.stringify({ total_kWh }));
+    }, 5000); // 每 5 秒發送一次 apower 值
 });
 
 // ======== 啟動伺服器 ========

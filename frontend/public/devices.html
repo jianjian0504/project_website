@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>裝置管理 - 戀上碳追蹤</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>戀上碳追蹤</h1>
+            <nav>
+                <ul>
+                    <li><a href="main.html">總覽</a></li>
+                    <li><a href="devices.html">裝置</a></li>
+                </ul>
+            </nav>
+            <div class="profile-container">
+                <a href="#" id="profileLink" class="profile-link">
+                    <img src="nickstar.png" alt="User Profile" class="profile-pic">
+                </a>
+                <div id="profileMenu" class="profile-menu">
+                    <ul>
+                        <li><a href="#">設定</a></li>
+                        <li><a href="#" id="logoutLink">登出</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+        <main>
+            <section class="device-section">
+                <h2>新增裝置</h2>
+                <form id="deviceForm">
+                    <label for="deviceName">裝置名稱:</label>
+                    <input type="text" id="deviceName" name="deviceName" required>
+                    <button type="submit">新增裝置</button>
+                </form>
+                <div id="deviceMessage"></div>
+            </section>
+        </main>
+        <footer>
+            <p>&copy; 2024 戀上碳追蹤. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>

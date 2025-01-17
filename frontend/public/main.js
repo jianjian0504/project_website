@@ -40,6 +40,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 綁定新增裝置表單的提交事件
+    const deviceForm = document.getElementById('deviceForm');
+    const deviceMessage = document.getElementById('deviceMessage');
+
+    if (deviceForm) {
+        deviceForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new URLSearchParams(new FormData(deviceForm));
+
+            try {
+                const response = await fetch('/devices', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    deviceMessage.style.color = 'green';
+                    deviceMessage.textContent = '裝置新增成功！';
+                } else {
+                    deviceMessage.style.color = 'red';
+                    deviceMessage.textContent = '新增失敗: ' + result.message;
+                }
+            } catch (error) {
+                deviceMessage.style.color = 'red';
+                deviceMessage.textContent = '新增過程中出現錯誤，請稍後再試。';
+            }
+        });
+    }
+
     // WebSocket 連線初始化
     const socket = new WebSocket('ws://localhost:8080');
     socket.onmessage = (event) => {
@@ -106,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false, // 確保圖表不會被壓縮
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -133,6 +167,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 powerChart.data.datasets[0].data = powerData;
             }
             powerChart.update();
+        });
+    }
+
+    const settingsLink = document.getElementById('settingsLink');
+    const settingsSection = document.getElementById('settingsSection');
+    const settingsForm = document.getElementById('settingsForm');
+    const settingsMessage = document.getElementById('settingsMessage');
+
+    if (settingsLink && settingsSection) {
+        settingsLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            settingsSection.style.display = settingsSection.style.display === 'block' ? 'none' : 'block';
+        });
+    }
+
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(settingsForm);
+
+            try {
+                const response = await fetch('/settings', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    settingsMessage.style.color = 'green';
+                    settingsMessage.textContent = '設定已儲存！';
+                } else {
+                    settingsMessage.style.color = 'red';
+                    settingsMessage.textContent = '儲存失敗: ' + result.message;
+                }
+            } catch (error) {
+                settingsMessage.style.color = 'red';
+                settingsMessage.textContent = '儲存過程中出現錯誤，請稍後再試。';
+            }
         });
     }
 });
