@@ -191,8 +191,9 @@ app.use((req, res) => {
 
 
 
-let apower = 0; // 在作用域頂部宣告變數，用來儲存來自 WebSocket 的 apower 值
-let total_kWh=0;
+let apower = {}; // 用來儲存來自 WebSocket 的各裝置 apower 值
+let total_kWh = 0;
+
 // ======== WebSocket 設置 ========
 
 // 創建 HTTP 伺服器來支持 WebSocket
@@ -208,7 +209,6 @@ wss.on('connection', (ws) => {
     // 處理 WebSocket 傳來的訊息
     ws.on('message', (message) => {
         try {
-            // 解析收到的訊息
             const data = JSON.parse(message);
 
             // 檢查是否包含 `result.apower` 並提取其值

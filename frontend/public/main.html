@@ -37,6 +37,16 @@
                     <option value="power">用電資訊</option>
                     <option value="carbon">碳排放</option>
                 </select>
+                <br>
+                <label for="deviceSelector">選擇裝置：</label>
+                <select id="deviceSelector" multiple></select>
+                <br>
+                <label for="timeRangeSelector">選擇時間範圍：</label>
+                <select id="timeRangeSelector">
+                    <option value="day">日</option>
+                    <option value="week">週</option>
+                    <option value="month">月</option>
+                </select>
                 <div class="chart-container">
                     <canvas id="dataChart"></canvas>
                 </div>
