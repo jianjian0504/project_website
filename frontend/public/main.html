@@ -21,11 +21,14 @@
                 <a href="#" id="profileLink" class="profile-link">
                     <img src="nickstar.png" alt="User Profile" class="profile-pic">
                 </a>
+                <span id="usernameDisplay" style="margin-left: 8px; font-weight: bold;"></span>
                 <div id="profileMenu" class="profile-menu">
-                    <ul>
-                        <li><a href="#" id="settingsLink">設定</a></li>
-                        <li><a href="#" id="logoutLink">登出</a></li>
-                    </ul>
+                    <nav>
+                        <ul>
+                            <li><a href="settings.html" id="settingsLink">設定</a></li>
+                                <li><a href="#" id="logoutLink">登出</a></li>
+                        </ul>
+                    </nav>
                 </div>
             </div>
         </header>
@@ -43,12 +46,13 @@
                 <br>
                 <label for="timeRangeSelector">選擇時間範圍：</label>
                 <select id="timeRangeSelector">
+                    <option value="hour">小時</option>
                     <option value="day">日</option>
                     <option value="week">週</option>
                     <option value="month">月</option>
                 </select>
                 <div class="chart-container">
-                    <canvas id="dataChart"></canvas>
+                    <canvas id="statsChart"></canvas>
                 </div>
             </section>
             <section class="statistics-section">
@@ -58,17 +62,7 @@
                     <p>總碳排放量：<span id="totalCarbon">0</span> 公斤</p>
                 </div>
             </section>
-            <section class="settings-section" id="settingsSection" style="display: none;">
-                <h2>設定</h2>
-                <form id="settingsForm">
-                    <label for="email">電子郵件:</label>
-                    <input type="email" id="email" name="email" required>
-                    <label for="profilePic">上傳大頭照:</label>
-                    <input type="file" id="profilePic" name="profilePic" accept="image/*">
-                    <button type="submit">儲存設定</button>
-                </form>
-                <div id="settingsMessage"></div>
-            </section>
+            
         </main>
         <footer>
             <p>&copy; 2024 戀上碳追蹤. All rights reserved.</p>

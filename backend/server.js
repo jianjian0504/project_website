@@ -16,10 +16,12 @@ const PORT = 4000;
 
 // ======== MySQL 資料庫連接設置 ========
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
+    host: '120.101.8.216',
+    user: 'username',
+    password: 'password',
     database: 'sql_account',
-    port: 3306
+    port: 3306,
+    timezone: 'UTC+8' // 使用 UTC+8 的偏移量
 });
 
 db.connect((err) => {
@@ -116,12 +118,135 @@ app.post('/register', (req, res) => {
 // ======== 取得個人用電資訊 API ========
 app.get('/power-data', isAuthenticated, (req, res) => {
     const userId = req.session.user.id;
-
-    const query = 'SELECT * FROM power_data WHERE user_id = ?';
-    db.query(query, [userId], (err, results) => {
-        if (err) return res.status(500).json({ message: '無法取得用電資訊' });
+    // 選擇時間區間，從前端 query 傳入 (hour/day/week/month)
+    const timeRange = req.query.timeRange || 'day';
+    let query = '';
+    let params = [userId];
+    if(timeRange === 'hour'){
+        // 取最近 5 筆原始記錄 (資料庫更新頻率為每分鐘，但為了顯示效果，以過去 8 小時作資料來源)
+        query = `
+          SELECT device_id, power_usage AS total_usage, \`date\`
+          FROM (
+              SELECT device_id, power_usage, \`date\`,
+                     ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY \`date\` DESC) AS rn
+              FROM power_data
+              WHERE user_id = ? AND \`date\` >= DATE_SUB(NOW(), INTERVAL 8 HOUR)
+          ) t
+          WHERE rn <= 5
+          ORDER BY device_id, \`date\` ASC;
+        `;
+    } else if(timeRange === 'day'){
+        // 聚合：依小時聚合（一天 24 小時）
+        query = `
+          SELECT device_id, DATE_FORMAT(\`date\`, '%H:00') AS label, SUM(power_usage) AS total_usage
+          FROM power_data
+          WHERE user_id = ? AND \`date\` >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+          GROUP BY device_id, DATE_FORMAT(\`date\`, '%H:00')
+          ORDER BY device_id, label ASC;
+        `;
+    } else if(timeRange === 'week'){
+        // 聚合：依日期聚合（7 天內以天為單位）
+        query = `
+          SELECT device_id, DATE_FORMAT(\`date\`, '%Y-%m-%d') AS label, SUM(power_usage) AS total_usage
+          FROM power_data
+          WHERE user_id = ? AND \`date\` >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+          GROUP BY device_id, DATE_FORMAT(\`date\`, '%Y-%m-%d')
+          ORDER BY device_id, label ASC;
+        `;
+    } else if(timeRange === 'month'){
+        // 聚合：依日期聚合（30 天內以天為單位）
+        query = `
+          SELECT device_id, DATE_FORMAT(\`date\`, '%Y-%m-%d') AS label, SUM(power_usage) AS total_usage
+          FROM power_data
+          WHERE user_id = ? AND \`date\` >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+          GROUP BY device_id, DATE_FORMAT(\`date\`, '%Y-%m-%d')
+          ORDER BY device_id, label ASC;
+        `;
+    } else {
+        // fallback: 當作 day 查詢
+        query = `
+          SELECT device_id, DATE_FORMAT(\`date\`, '%Y-%m-%d') AS label, SUM(power_usage) AS total_usage
+          FROM power_data
+          WHERE user_id = ? AND \`date\` >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+          GROUP BY device_id, DATE_FORMAT(\`date\`, '%Y-%m-%d')
+          ORDER BY device_id, label ASC;
+        `;
+    }
+    db.query(query, params, (err, results) => {
+        if (err) return res.status(500).json({ message: '無法取得用電資訊', error: err });
         res.json(results);
     });
+});
+
+// ======== 取得個人統計數據 API ========
+// 此 API 回傳整體（所有裝置）的時序數據，使用資料庫完成累計加總統計，再將結果傳回前端
+app.get('/power-stats', isAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
+    const timeRange = req.query.timeRange || 'day';
+
+    if(timeRange === 'hour'){
+        // 當選擇 hour 時，使用原有分段計算方式
+        let intervalKeyword = '8 HOUR';
+        let totalSeconds = 8 * 3600;
+        const query = `
+            SELECT 
+              COALESCE(SUM(CASE WHEN FLOOR(5 * (UNIX_TIMESTAMP(\`date\`) - UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL ${intervalKeyword})))/ ${totalSeconds}) = 0 
+                             THEN power_usage END), 0) AS seg0,
+              COALESCE(SUM(CASE WHEN FLOOR(5 * (UNIX_TIMESTAMP(\`date\`) - UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL ${intervalKeyword})))/ ${totalSeconds}) = 1 
+                             THEN power_usage END), 0) AS seg1,
+              COALESCE(SUM(CASE WHEN FLOOR(5 * (UNIX_TIMESTAMP(\`date\`) - UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL ${intervalKeyword})))/ ${totalSeconds}) = 2 
+                             THEN power_usage END), 0) AS seg2,
+              COALESCE(SUM(CASE WHEN FLOOR(5 * (UNIX_TIMESTAMP(\`date\`) - UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL ${intervalKeyword})))/ ${totalSeconds}) = 3 
+                             THEN power_usage END), 0) AS seg3,
+              COALESCE(SUM(CASE WHEN FLOOR(5 * (UNIX_TIMESTAMP(\`date\`) - UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL ${intervalKeyword})))/ ${totalSeconds}) = 4 
+                             THEN power_usage END), 0) AS seg4
+            FROM power_data 
+            WHERE user_id = ? AND \`date\` >= DATE_SUB(NOW(), INTERVAL ${intervalKeyword})
+        `;
+        console.log("Executing /power-stats query:", query);
+        db.query(query, [userId], (err, results) => {
+            if (err) {
+                console.error("DB query error in /power-stats:", err);
+                return res.status(500).json({ message: '無法取得統計數據', error: err });
+            }
+            console.log("Query results in /power-stats:", results);
+            const row = results[0] || { seg0: 0, seg1: 0, seg2: 0, seg3: 0, seg4: 0 };
+            const overallTimeseries = [row.seg0, row.seg1, row.seg2, row.seg3, row.seg4];
+            res.json({ overallTimeseries });
+        });
+    } else {
+        // 對於 day、week、month，直接總和當天/該區間內的用電量
+        let intervalForStats = '';
+        switch(timeRange) {
+            case 'day':
+                intervalForStats = '1 DAY';
+                break;
+            case 'week':
+                intervalForStats = '7 DAY';
+                break;
+            case 'month':
+                intervalForStats = '30 DAY';
+                break;
+            default:
+                intervalForStats = '1 DAY';
+                break;
+        }
+        const query = `
+            SELECT SUM(power_usage) AS total_usage
+            FROM power_data
+            WHERE user_id = ? AND \`date\` >= DATE_SUB(NOW(), INTERVAL ${intervalForStats})
+        `;
+        console.log("Executing /power-stats query (aggregated):", query);
+        db.query(query, [userId], (err, results) => {
+            if (err) {
+                console.error("DB query error in /power-stats:", err);
+                return res.status(500).json({ message: '無法取得統計數據', error: err });
+            }
+            const row = results[0] || { total_usage: 0 };
+            // 為了前端統一作法，以陣列回傳
+            res.json({ overallTimeseries: [row.total_usage] });
+        });
+    }
 });
 
 // ======== 儲存用電資訊 API ========
@@ -184,72 +309,18 @@ app.get('/logout', (req, res) => {
     });
 });
 
+// ======== 新增用戶資訊 API，取得目前登入用戶的 username ========
+app.get('/user-info', isAuthenticated, (req, res) => {
+    if (req.session && req.session.user) {
+        res.json({ username: req.session.user.username });
+    } else {
+        res.status(401).json({ message: '未登入' });
+    }
+});
+
 // ======== 處理 404 錯誤 ========
 app.use((req, res) => {
     res.status(404).send('Not Found');
-});
-
-
-
-let apower = {}; // 用來儲存來自 WebSocket 的各裝置 apower 值
-let total_kWh = 0;
-
-// ======== WebSocket 設置 ========
-
-// 創建 HTTP 伺服器來支持 WebSocket
-const server = http.createServer(app);
-
-// 創建 WebSocket 伺服器
-const wss = new WebSocket.Server({ server });
-
-// 當 WebSocket 連線建立時
-wss.on('connection', (ws) => {
-    console.log('有新的 WebSocket 連線');
-
-    // 處理 WebSocket 傳來的訊息
-    ws.on('message', (message) => {
-        try {
-            const data = JSON.parse(message);
-
-            // 檢查是否包含 `result.apower` 並提取其值
-            if (data.result && typeof data.result.apower === 'number') {
-                apower = data.result.apower;  // 更新 apower 的值
-                console.log(`更新的 apower 值: ${apower}`);
-            } else {
-                console.error('訊息中不包含有效的 apower 資料');
-                ws.send('無效的資料格式');
-            }
-
-            if (data.result && typeof data.result.total_kWh === 'number') {
-                total_kWh = data.result.total_kWh;  // 更新 apower 的值
-                console.log(`更新的 total_kWh 值: ${total_kWh}`);
-            } else {
-                console.error('訊息中不包含有效的 total_kwh 資料');
-                ws.send('無效的資料格式');
-            }
-        } catch (error) {
-            console.error('無法解析訊息:', error);
-            ws.send('解析錯誤');
-        }
-    });
-
-    // 當 WebSocket 連線關閉時
-    ws.on('close', () => {
-        console.log('客戶端已斷線');
-    });
-});
-
-// 創建另一個 WebSocket 伺服器，用來向前端傳送 apower 數據
-const wss2 = new WebSocket.Server({ port: 8080 });
-
-wss2.on('connection', (ws) => {
-    console.log('前端已連線');
-    
-    // 定時每秒傳送一次 apower 數據
-    setInterval(() => {
-        ws.send(JSON.stringify({ apower }));
-        ws.send(JSON.stringify({ total_kWh }));
-    }, 5000); // 每 5 秒發送一次 apower 值
 });
 
 // ======== 啟動伺服器 ========
@@ -263,6 +334,11 @@ function getLocalIPAddress() {
     }
     return 'localhost'; // 如果無法找到 IP，就返回 localhost
 }
+
+// 使用 http 模組建立 HTTP 伺服器，讓 WebSocket 等功能也能正常運作
+const server = http.createServer(app);
+
+// 啟動伺服器
 server.listen(PORT, '0.0.0.0', () => {
     const localIP = getLocalIPAddress();
     console.log(`伺服器運行於 http://${localIP}:${PORT}`);
