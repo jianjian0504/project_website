@@ -27,6 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return color;
     }
 
+    // 新增全域變數，儲存各裝置的顏色，避免數據更新時重新取得顏色
+    const deviceColors = {};
+
+    // 將 hex 顏色轉換為 rgba 格式，alpha 為透明度
+    function hexToRGBA(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
     // 初始化登出按鈕
     if (logoutLink) {
         logoutLink.addEventListener('click', (event) => {
@@ -113,6 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/devices');
             const devices = await response.json();
+            // 新增「全部裝置」選項
+            const allOption = document.createElement('option');
+            allOption.value = 'all';
+            allOption.textContent = '全部裝置';
+            deviceSelector.appendChild(allOption);
             devices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.id;
@@ -202,33 +218,66 @@ document.addEventListener('DOMContentLoaded', () => {
                         labelsSet.add(record.parsedEpoch);
                     });
                 });
-                const sortedEpochs = Array.from(labelsSet).sort((a, b) => a - b);
+                let sortedEpochs = Array.from(labelsSet).sort((a, b) => a - b);
+                if (sortedEpochs.length === 0) {
+                    const now = Date.now();
+                    sortedEpochs = [now - 4 * 60000, now - 3 * 60000, now - 2 * 60000, now - 60000, now];
+                }
                 const labelsArray = sortedEpochs.map(epoch => new Date(epoch).toLocaleString());
 
                 let selectedDevices = [];
                 if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
-                    selectedDevices = Array.from(deviceSelector.selectedOptions).map(option => option.value);
+                    const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
+                    if (selected.includes('all')) {
+                        selectedDevices = Object.keys(deviceData);
+                    } else {
+                        selectedDevices = selected;
+                    }
                 } else {
                     selectedDevices = Object.keys(deviceData);
                 }
+                if (selectedDevices.length === 0) {
+                    selectedDevices = ["No Data"];
+                    deviceData["No Data"] = [];
+                }
 
-                const datasets = selectedDevices.map(deviceId => {
+                // 生成當前小時60分鐘標籤 (格式 hh:mm)
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = now.getMonth();
+                const currentDate = now.getDate();
+                const currentHour = now.getHours();
+                const currentLabelsArray = [];
+                for (let m = 0; m < 60; m++) {
+                    const dt = new Date(currentYear, currentMonth, currentDate, currentHour, m);
+                    currentLabelsArray.push(dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}));
+                }
+
+                // 對每個裝置，依據記錄中的分鐘數取用電數值，沒數值則補0
+                const currentDatasets = selectedDevices.map(deviceId => {
                     const usageMap = {};
                     (deviceData[deviceId] || []).forEach(record => {
-                        usageMap[record.parsedEpoch] = record.total_usage;
+                        const recordDate = new Date(record.date);
+                        const minute = recordDate.getMinutes();
+                        const key = minute < 10 ? '0' + minute : '' + minute;
+                        usageMap[key] = record.total_usage;
                     });
-                    const dataArray = sortedEpochs.map(epoch => (usageMap[epoch] !== undefined ? usageMap[epoch] : 0));
+                    const dataArray = [];
+                    for (let m = 0; m < 60; m++) {
+                        const key = m < 10 ? '0' + m : '' + m;
+                        dataArray.push(usageMap[key] !== undefined ? usageMap[key] : 0);
+                    }
+                    const color = deviceColors[deviceId] || (deviceColors[deviceId] = getRandomColor());
                     return {
                         label: `裝置 ${deviceId} 用電量 (kWh)`,
                         data: dataArray,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: color,
+                        backgroundColor: hexToRGBA(color, 0.2),
                         borderWidth: 2,
                     };
                 });
-
-                powerChart.data.labels = labelsArray;
-                powerChart.data.datasets = datasets;
+                powerChart.data.labels = currentLabelsArray;
+                powerChart.data.datasets = currentDatasets;
                 powerChart.update();
             } else {
                 const aggregatedRecords = result;
@@ -241,20 +290,52 @@ document.addEventListener('DOMContentLoaded', () => {
                     deviceData[deviceId].push(record);
                 });
 
-                const labelsSet = new Set();
-                Object.keys(deviceData).forEach(deviceId => {
-                    deviceData[deviceId].sort((a, b) => new Date(a.label) - new Date(b.label));
-                    deviceData[deviceId].forEach(record => {
-                        labelsSet.add(record.label);
-                    });
-                });
-                const labelsArray = Array.from(labelsSet).sort((a, b) => new Date(a) - new Date(b));
+                let labelsArray = [];
+                if (currentTimeRange === 'day') {
+                    // 以小時為單位，生成全天 24 小時，如 "00:00", "01:00", …, "23:00"
+                    for (let i = 0; i < 24; i++) {
+                        labelsArray.push((i < 10 ? '0' + i : i) + ":00");
+                    }
+                } else if (currentTimeRange === 'week') {
+                    // 生成最近 7 天的日期，格式 "YYYY-MM-DD"
+                    let expected = [];
+                    for (let i = 6; i >= 0; i--) {
+                        let d = new Date();
+                        d.setDate(d.getDate() - i);
+                        expected.push(d.toISOString().slice(0, 10));
+                    }
+                    labelsArray = expected;
+                } else if (currentTimeRange === 'month') {
+                    // 生成本月所有日期，格式 "YYYY-MM-DD"
+                    let now = new Date();
+                    let year = now.getFullYear();
+                    let month = now.getMonth();
+                    let daysInMonth = new Date(year, month + 1, 0).getDate();
+                    let expected = [];
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        let dayStr = d < 10 ? '0' + d : d;
+                        let monStr = (month + 1) < 10 ? '0' + (month + 1) : (month + 1);
+                        expected.push(`${year}-${monStr}-${dayStr}`);
+                    }
+                    labelsArray = expected;
+                } else {
+                    labelsArray = [new Date().toLocaleString()];
+                }
 
                 let selectedDevices = [];
                 if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
-                    selectedDevices = Array.from(deviceSelector.selectedOptions).map(option => option.value);
+                    const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
+                    if (selected.includes('all')) {
+                        selectedDevices = Object.keys(deviceData);
+                    } else {
+                        selectedDevices = selected;
+                    }
                 } else {
                     selectedDevices = Object.keys(deviceData);
+                }
+                if (selectedDevices.length === 0) {
+                    selectedDevices = ["No Data"];
+                    deviceData["No Data"] = [];
                 }
 
                 const datasets = selectedDevices.map(deviceId => {
@@ -263,11 +344,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         usageMap[record.label] = record.total_usage;
                     });
                     const dataArray = labelsArray.map(label => (usageMap[label] !== undefined ? usageMap[label] : 0));
+                    const color = deviceColors[deviceId] || (deviceColors[deviceId] = getRandomColor());
                     return {
                         label: `裝置 ${deviceId} 用電量 (kWh)`,
                         data: dataArray,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: color,
+                        backgroundColor: hexToRGBA(color, 0.2),
                         borderWidth: 2,
                     };
                 });
@@ -284,19 +366,46 @@ document.addEventListener('DOMContentLoaded', () => {
     // 新增函式：從 /power-stats 取得總用電統計數據並更新右側統計區及統計圖表
     async function fetchPowerStats() {
         try {
-            let url = '/power-stats';
-            if (timeRangeSelector) {
-                url += '?timeRange=' + timeRangeSelector.value;
-            }
+            // 改從 /power-data 取得數據，並依timeRange參數過濾
+            let url = '/power-data';
+            const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'hour';
+            url += '?timeRange=' + currentTimeRange;
             const response = await fetch(url);
-            const result = await response.json(); // result 格式：{ overallTimeseries: [a, b, c, d, e] }
-            
-            const overallTimeseries = result.overallTimeseries || [0, 0, 0, 0, 0];
-            const overallTotal = overallTimeseries.reduce((sum, val) => sum + Number(val), 0);
+            const records = await response.json();
+            // 依裝置分組，累計用電數量
+            const deviceSums = {};
+            records.forEach(record => {
+                const deviceId = record.device_id;
+                if (!deviceSums[deviceId]) {
+                    deviceSums[deviceId] = 0;
+                }
+                deviceSums[deviceId] += Number(record.total_usage) || 0;
+            });
+
+            // 計算整體總用電
+            let overallTotal = 0;
+            for (const id in deviceSums) {
+                overallTotal += deviceSums[id];
+            }
             totalPowerElement.textContent = overallTotal.toFixed(2);
             totalCarbonElement.textContent = (overallTotal * carbonPerUnit).toFixed(2);
-            
-            // 此處僅更新統計數據文字，不更新圖表
+
+            // 更新統計區內的各設備統計資料
+            let deviceStatsDiv = document.getElementById('deviceStats');
+            if (!deviceStatsDiv) {
+                deviceStatsDiv = document.createElement('div');
+                deviceStatsDiv.id = 'deviceStats';
+                // 假設統計區的容器的 id 為 "statistics"
+                const statisticsContainer = document.getElementById('statistics');
+                statisticsContainer.appendChild(deviceStatsDiv);
+            }
+            // 清空原有內容
+            deviceStatsDiv.innerHTML = '';
+            for (const id in deviceSums) {
+                const p = document.createElement('p');
+                p.textContent = `裝置 ${id} 用電數：${deviceSums[id].toFixed(2)} 度`;
+                deviceStatsDiv.appendChild(p);
+            }
         } catch (error) {
             console.error('獲取統計數據失敗:', error);
         }

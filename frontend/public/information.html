@@ -33,39 +33,31 @@
                 </div>
             </div>
         </header>
-        <main>
-            <section class="info-section">
-                <h2>用電資訊與碳排放</h2>
-                <label for="chartSelector">選擇數據類型：</label>
-                <select id="chartSelector">
-                    <option value="power">用電資訊</option>
-                    <option value="carbon">碳排放</option>
-                </select>
-                <br>
-                <label for="deviceSelector">選擇裝置：</label>
-                <select id="deviceSelector" multiple></select>
-                <br>
-                <label for="timeRangeSelector">選擇時間範圍：</label>
-                <select id="timeRangeSelector">
-                    <option value="hour">小時</option>
-                    <option value="day">日</option>
-                    <option value="week">週</option>
-                    <option value="month">月</option>
-                </select>
-                <div class="chart-container">
-                    <canvas id="statsChart"></canvas>
-                </div>
-            </section>
-            <section class="statistics-section">
-                <h2>統計數據</h2>
-                <div id="statistics" class="info-box">
-                    <p>總用電度數：<span id="totalPower">0</span> 度</p>
-                    <p>總碳排放量：<span id="totalCarbon">0</span> 公斤</p>   
-                    <p>碳排放係數：0.494 kgCO2e/kWh</p>
-                </div>
-            </section>
-            
-        </main>
+
+        <section id="carbonAudit">
+            <h2>碳盤查介紹</h2>
+            <p>
+                碳盤查是一個用於量化、計算並管理組織或個人碳排放的方法。透過對能源消耗、交通運輸及各種日常活動的碳排放進行盤點，
+                我們可以瞭解環境足跡，並進而規劃減碳策略。透過碳盤查，企業及個人均能有效評估自身對氣候變遷的影響，並持續追蹤改善成效。
+            </p>
+            <p>111年度碳排放係數為：0.494 kgCO2e/kWh</p>
+            <p>參考資料：
+                <a href="https://www.moeaea.gov.tw/ecw/populace/content/ContentDesc.aspx?menu_id=23142" target="_blank">
+                    經濟部能源局碳盤查說明
+                </a>
+            </p>
+        </section>
+        
+        <section id="blockchainIntro">
+            <h2>區塊鏈技術介紹</h2>
+            <p>
+                區塊鏈是一項分散式資料儲存與點對點資訊傳輸的創新技術，透過去中心化架構確保資料的不可篡改性和透明度。
+                這項技術已廣泛應用於金融、供應鏈、數位資產管理以及環境監測等領域，為各項系統帶來更高的安全性與信任度。
+            </p>
+            <p>
+                在本系統中，區塊鏈技術被用來確保用電資訊與碳排放數據的真實性與透明度，進一步建立數據可信賴的基礎，以支持可持續發展。
+            </p>
+        </section>
         <footer>
             <p>&copy; 2025 戀上碳追蹤. All rights reserved.</p>
         </footer>

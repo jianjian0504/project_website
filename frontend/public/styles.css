@@ -7,9 +7,9 @@ body {
 }
 
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
     position: relative;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 10px;
@@ -193,5 +193,14 @@ nav ul li a {
     text-decoration: none;
     color: #333;
     font-weight: bold;
-    transition: color 0.3s ease;
+    font-size: 1.2rem;  /* 將字型調大到 1.2rem */
+    /* 設定連結狀態改變時，過渡動畫持續 0.3 秒 */
+    transition: box-shadow 0.3s ease, transform 0.3s ease, color 0.3s ease;
+}
+
+nav ul li a:hover {
+    /* 當滑鼠移上連結時增加陰影和放大效果 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+    color: #2980b9;
 }
