@@ -193,7 +193,7 @@ nav ul li a {
     text-decoration: none;
     color: #333;
     font-weight: bold;
-    font-size: 1.2rem;  /* 將字型調大到 1.2rem */
+    font-size: 1.5rem;  /* 將字型調大到 1.2rem */
     /* 設定連結狀態改變時，過渡動畫持續 0.3 秒 */
     transition: box-shadow 0.3s ease, transform 0.3s ease, color 0.3s ease;
 }

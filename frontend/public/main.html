@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <header>
+        <header class="centered-header">
             <h1>戀上碳追蹤</h1>
             <nav>
                 <ul>
@@ -52,6 +52,30 @@
                     <option value="week">週</option>
                     <option value="month">月</option>
                 </select>
+                <div id="dateRangeContainer" style="margin-top: 10px;">
+                    <label for="selectedDate">選擇日期：</label>
+                    <input type="date" id="selectedDate">
+                </div>
+                <div id="monthRangeContainer" style="margin-top: 10px;">
+                    <label for="selectedMonth">選擇月份：</label>
+                    <select id="selectedYear" style="margin-right: 5px;">
+                        <!-- 年份選項會由 JavaScript 動態生成 -->
+                    </select>
+                    <select id="selectedMonth">
+                        <option value="01">1 月</option>
+                        <option value="02">2 月</option>
+                        <option value="03">3 月</option>
+                        <option value="04">4 月</option>
+                        <option value="05">5 月</option>
+                        <option value="06">6 月</option>
+                        <option value="07">7 月</option>
+                        <option value="08">8 月</option>
+                        <option value="09">9 月</option>
+                        <option value="10">10 月</option>
+                        <option value="11">11 月</option>
+                        <option value="12">12 月</option>
+                    </select>
+                </div>
                 <div class="chart-container">
                     <canvas id="statsChart"></canvas>
                 </div>
@@ -71,5 +95,6 @@
         </footer>
     </div>
     <script src="main.js"></script>
+    <script src="auth.js"></script>
 </body>
 </html>

@@ -148,13 +148,31 @@ app.get('/power-data', isAuthenticated, (req, res) => {
               ORDER BY device_id, date ASC;
             `;
         } else if(timeRange === 'day'){
+            // 如果提供了特定日期，使用該日期；否則使用最近24小時
+            const dateParam = req.query.date;
+            console.log('收到的日期參數:', dateParam);
+            let dateCondition;
+            if (dateParam) {
+                dateCondition = 'DATE(date) = ?';
+                params.push(dateParam);
+                console.log('使用指定日期查詢');
+            } else {
+                dateCondition = 'date >= DATE_SUB(NOW(), INTERVAL 1 DAY)';
+                console.log('使用預設日期範圍查詢');
+            }
+
+            console.log('SQL 查詢條件:', dateCondition);
+            console.log('查詢參數:', params);
+
             query = `
-              SELECT device_id, DATE_FORMAT(date, '%H:00') AS label, SUM(power_usage) AS total_usage
-              FROM power_data
-              WHERE user_id = ? AND date >= DATE_SUB(NOW(), INTERVAL 1 DAY)
-              GROUP BY device_id, DATE_FORMAT(date, '%H:00')
-              ORDER BY device_id, label ASC;
+                SELECT device_id, DATE_FORMAT(date, '%H:00') AS label, SUM(power_usage) AS total_usage
+                FROM power_data
+                WHERE user_id = ? AND ${dateCondition}
+                GROUP BY device_id, DATE_FORMAT(date, '%H:00')
+                ORDER BY device_id, label ASC;
             `;
+
+            console.log('完整 SQL 查詢:', query);
         } else if(timeRange === 'week'){
             query = `
               SELECT device_id, DATE_FORMAT(date, '%Y-%m-%d') AS label, SUM(power_usage) AS total_usage
@@ -311,6 +329,15 @@ app.get('/user-info', isAuthenticated, (req, res) => {
         res.json({ username: req.session.user.username });
     } else {
         res.status(401).json({ message: '未登入' });
+    }
+});
+
+// ======== 檢查用戶是否已登入的 API ========
+app.get('/check-auth', (req, res) => {
+    if (req.session && req.session.user) {
+        res.json({ authenticated: true });
+    } else {
+        res.status(401).json({ authenticated: false });
     }
 });
 

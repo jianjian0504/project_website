@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 檢查登入狀態後初始化頁面
+    checkAuth().then(isAuthenticated => {
+        if (isAuthenticated) {
+            initializePage();
+        }
+    });
+});
+
+// 將原本的初始化代碼移到這個函數中
+function initializePage() {
     console.log('DOM 已完全加載');
 
     const blockchainMessagesDiv = document.getElementById('blockchainMessages');
@@ -7,6 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartSelector = document.getElementById('chartSelector');
     const deviceSelector = document.getElementById('deviceSelector');
     const timeRangeSelector = document.getElementById('timeRangeSelector');
+    const selectedDate = document.getElementById('selectedDate');
+    const dateRangeContainer = document.getElementById('dateRangeContainer');
+    const selectedYear = document.getElementById('selectedYear');
+    const selectedMonth = document.getElementById('selectedMonth');
+    const monthRangeContainer = document.getElementById('monthRangeContainer');
     const totalPowerElement = document.getElementById('totalPower');
     const totalCarbonElement = document.getElementById('totalCarbon');
     const logoutLink = document.getElementById('logoutLink');
@@ -182,16 +197,78 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 生成年份選項（從 2020 年到當前年份）
+    function generateYearOptions() {
+        const currentYear = new Date().getFullYear();
+        for (let year = 2020; year <= currentYear; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year + ' 年';
+            selectedYear.appendChild(option);
+        }
+        selectedYear.value = currentYear; // 預設選擇當前年份
+    }
+    
+    // 初始化年份選項
+    generateYearOptions();
+
+    // 設定日期選擇器預設值
+    selectedDate.valueAsDate = new Date();
+    // 設定月份選擇器預設值為當前月份
+    const now = new Date();
+    selectedMonth.value = String(now.getMonth() + 1).padStart(2, '0');
+    
+    // 根據時間範圍顯示/隱藏日期範圍選擇器
+    function toggleDateRange() {
+        dateRangeContainer.style.display = 
+            timeRangeSelector.value === 'day' ? 'block' : 'none';
+        monthRangeContainer.style.display = 
+            timeRangeSelector.value === 'month' ? 'block' : 'none';
+    }
+    
+    // 初始化時執行一次
+    toggleDateRange();
+    
+    // 當時間範圍改變時切換日期範圍選擇器顯示狀態
+    timeRangeSelector.addEventListener('change', () => {
+        toggleDateRange();
+        updateDashboard();
+    });
+    
+    // 當日期範圍改變時更新圖表
+    selectedDate.addEventListener('change', () => {
+        console.log('選擇的日期:', selectedDate.value);
+        updateDashboard();
+    });
+    selectedYear.addEventListener('change', updateDashboard);
+    selectedMonth.addEventListener('change', updateDashboard);
+
     // 新增函式：從 /power-data 取得各裝置的分段用電數據並更新圖表
     async function fetchPowerDataAndUpdateChart() {
         try {
             let url = '/power-data';
             const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'hour';
-            if (timeRangeSelector) {
-                url += '?timeRange=' + currentTimeRange;
+            console.log('當前時間範圍:', currentTimeRange);
+            
+            let queryParams = new URLSearchParams();
+            queryParams.append('timeRange', currentTimeRange);
+            
+            // 根據視圖類型加入對應的日期或月份參數
+            if (currentTimeRange === 'day' && selectedDate.value) {
+                console.log('添加日期參數:', selectedDate.value);
+                queryParams.append('date', selectedDate.value);
+            } else if (currentTimeRange === 'month') {
+                const monthStr = `${selectedYear.value}-${selectedMonth.value}`;
+                queryParams.append('month', monthStr);
             }
+            
+            url += '?' + queryParams.toString();
+            console.log('請求 URL:', url);
+            
             const response = await fetch(url);
             const result = await response.json();
+            console.log('收到的數據:', result);
+
             if (!Array.isArray(result)) {
                 console.error("回傳的資料格式不正確，期待陣列，但收到：", result);
                 return;
@@ -481,4 +558,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 usernameDisplay.textContent = "訪客";
             });
     }
-});
+}
