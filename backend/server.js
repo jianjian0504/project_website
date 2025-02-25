@@ -8,8 +8,6 @@ const http = require('http');  // 需要 http 模組來啟動伺服器
 const WebSocket = require('ws');  // 引入 ws 模組
 const os = require('os');
 const networkInterfaces = os.networkInterfaces();
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
 
 const app = express();
 const PORT = 4000;
@@ -43,7 +41,7 @@ app.use(
         secret: 'your_secret_key', 
         resave: false,
         saveUninitialized: false, 
-        cookie: { maxAge: 600000 } // 設定 Session 有效期 10 分鐘
+        cookie: { maxAge: 1800000 } // 設定 Session 有效期 30 分鐘
     })
 );
 
@@ -278,14 +276,19 @@ app.post('/power-data', isAuthenticated, (req, res) => {
 // ======== 新增裝置 API ========
 app.post('/devices', isAuthenticated, (req, res) => {
     const userId = req.session.user.id;
-    const { deviceName, deviceType } = req.body;
+    const { deviceName, contractAddress } = req.body;
 
-    if (!deviceName || !deviceType) {
-        return res.status(400).json({ message: '請提供裝置名稱和類型' });
+    if (!deviceName || !contractAddress) {
+        return res.status(400).json({ message: '請提供裝置名稱和合約地址' });
     }
 
-    const query = 'INSERT INTO devices (user_id, device_name, device_type) VALUES (?, ?, ?)';
-    db.query(query, [userId, deviceName, deviceType], (err) => {
+    // 驗證合約地址格式
+    if (!/^0x[a-fA-F0-9]{40}$/.test(contractAddress)) {
+        return res.status(400).json({ message: '無效的合約地址格式' });
+    }
+
+    const query = 'INSERT INTO devices (user_id, device_name, contract_address) VALUES (?, ?, ?)';
+    db.query(query, [userId, deviceName, contractAddress], (err) => {
         if (err) return res.status(500).json({ message: '新增裝置失敗' });
         res.json({ success: true, message: '裝置已新增' });
     });
@@ -303,15 +306,18 @@ app.get('/devices', isAuthenticated, (req, res) => {
 });
 
 // ======== 設定表單提交 API ========
-app.post('/settings', isAuthenticated, upload.single('profilePic'), (req, res) => {
+app.post('/settings', isAuthenticated, (req, res) => {
     const userId = req.session.user.id;
-    const { email } = req.body;
-    const profilePic = req.file ? req.file.filename : null;
+    const { email, profilePic } = req.body;
 
     const query = 'UPDATE users SET email = ?, profile_pic = ? WHERE id = ?';
     db.query(query, [email, profilePic, userId], (err) => {
         if (err) return res.status(500).json({ message: '儲存失敗' });
-        res.json({ success: true, message: '設定已儲存' });
+        res.json({ 
+            success: true, 
+            message: '設定已儲存',
+            profilePicUrl: profilePic 
+        });
     });
 });
 
@@ -339,6 +345,22 @@ app.get('/check-auth', (req, res) => {
     } else {
         res.status(401).json({ authenticated: false });
     }
+});
+
+// ======== 取得用戶設定 API ========
+app.get('/user-settings', isAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
+    const query = 'SELECT email, profile_pic FROM users WHERE id = ?';
+    
+    db.query(query, [userId], (err, results) => {
+        if (err) return res.status(500).json({ message: '無法取得設定' });
+        if (results.length === 0) return res.status(404).json({ message: '找不到用戶' });
+        
+        res.json({
+            email: results[0].email,
+            profilePicUrl: results[0].profile_pic
+        });
+    });
 });
 
 // ======== 處理 404 錯誤 ========

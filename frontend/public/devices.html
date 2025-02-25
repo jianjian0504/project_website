@@ -37,6 +37,10 @@
                 <form id="deviceForm">
                     <label for="deviceName">裝置名稱:</label>
                     <input type="text" id="deviceName" name="deviceName" required>
+                    <label for="contractAddress">合約地址:</label>
+                    <input type="text" id="contractAddress" name="contractAddress" required 
+                           placeholder="請輸入以太坊合約地址" pattern="^0x[a-fA-F0-9]{40}$">
+                    <small>格式: 0x 開頭的 42 位十六進制字符</small>
                     <button type="submit">新增裝置</button>
                 </form>
                 <div id="deviceMessage"></div>
