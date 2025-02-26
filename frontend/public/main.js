@@ -157,8 +157,6 @@ function initializePage() {
 
     fetchDevices();
 
-   
-
     const settingsLink = document.getElementById('settingsLink');
     const settingsSection = document.getElementById('settingsSection');
     const settingsForm = document.getElementById('settingsForm');
@@ -243,6 +241,26 @@ function initializePage() {
     selectedYear.addEventListener('change', updateDashboard);
     selectedMonth.addEventListener('change', updateDashboard);
 
+    // 用於儲存裝置名稱對應的全域變數
+    const deviceNameMap = {};
+    
+    // 取得裝置資訊並建立映射
+    async function fetchDeviceNameMap() {
+        try {
+            const response = await fetch('/devices');
+            const devices = await response.json();
+            devices.forEach(device => {
+                deviceNameMap[device.id] = device.device_name;
+            });
+            console.log('裝置名稱映射:', deviceNameMap);
+        } catch (error) {
+            console.error('無法獲取裝置名稱映射:', error);
+        }
+    }
+    
+    // 初始化時取得裝置名稱映射
+    fetchDeviceNameMap();
+
     // 新增函式：從 /power-data 取得各裝置的分段用電數據並更新圖表
     async function fetchPowerDataAndUpdateChart() {
         try {
@@ -277,6 +295,10 @@ function initializePage() {
                 const records = result; // records：{ device_id, total_usage, date }
                 records.forEach(record => {
                     record.parsedEpoch = new Date(record.date.replace(' ', 'T')).getTime();
+                    // 若資料包含device_name，更新裝置名稱映射
+                    if (record.device_name) {
+                        deviceNameMap[record.device_id] = record.device_name;
+                    }
                 });
 
                 const deviceData = {};
@@ -345,8 +367,10 @@ function initializePage() {
                         dataArray.push(usageMap[key] !== undefined ? usageMap[key] : 0);
                     }
                     const color = deviceColors[deviceId] || (deviceColors[deviceId] = getRandomColor());
+                    // 使用裝置名稱作為標籤
+                    const deviceName = deviceNameMap[deviceId] || `裝置 ${deviceId}`;
                     return {
-                        label: `裝置 ${deviceId} 用電量 (kWh)`,
+                        label: `${deviceName} 用電量 (kWh)`,
                         data: dataArray,
                         borderColor: color,
                         backgroundColor: hexToRGBA(color, 0.2),
@@ -358,6 +382,13 @@ function initializePage() {
                 powerChart.update();
             } else {
                 const aggregatedRecords = result;
+                // 更新裝置名稱映射
+                aggregatedRecords.forEach(record => {
+                    if (record.device_name) {
+                        deviceNameMap[record.device_id] = record.device_name;
+                    }
+                });
+                
                 const deviceData = {};
                 aggregatedRecords.forEach(record => {
                     const deviceId = record.device_id;
@@ -422,8 +453,10 @@ function initializePage() {
                     });
                     const dataArray = labelsArray.map(label => (usageMap[label] !== undefined ? usageMap[label] : 0));
                     const color = deviceColors[deviceId] || (deviceColors[deviceId] = getRandomColor());
+                    // 使用裝置名稱作為標籤
+                    const deviceName = deviceNameMap[deviceId] || `裝置 ${deviceId}`;
                     return {
-                        label: `裝置 ${deviceId} 用電量 (kWh)`,
+                        label: `${deviceName} 用電量 (kWh)`,
                         data: dataArray,
                         borderColor: color,
                         backgroundColor: hexToRGBA(color, 0.2),
@@ -440,47 +473,77 @@ function initializePage() {
         }
     }
 
-    // 新增函式：從 /power-stats 取得總用電統計數據並更新右側統計區及統計圖表
+    // 修改：更新方法來取得最新用電統計數據
     async function fetchPowerStats() {
         try {
-            // 改從 /power-data 取得數據，並依timeRange參數過濾
+            // 獲取數據
             let url = '/power-data';
             const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'hour';
             url += '?timeRange=' + currentTimeRange;
             const response = await fetch(url);
             const records = await response.json();
-            // 依裝置分組，累計用電數量
-            const deviceSums = {};
+    
+            // 建立裝置ID到最新用電數據的映射
+            const latestDeviceUsage = {};
+            const deviceNames = {}; // 用來存儲 device_id 對應的 device_name
+            
+            // 先按裝置ID分組
+            const deviceRecords = {};
             records.forEach(record => {
                 const deviceId = record.device_id;
-                if (!deviceSums[deviceId]) {
-                    deviceSums[deviceId] = 0;
+                if (!deviceRecords[deviceId]) {
+                    deviceRecords[deviceId] = [];
                 }
-                deviceSums[deviceId] += Number(record.total_usage) || 0;
+                deviceRecords[deviceId].push(record);
+                
+                // 儲存裝置名稱
+                if (record.device_name) {
+                    deviceNames[deviceId] = record.device_name;
+                    // 同時更新全域的裝置名稱映射
+                    deviceNameMap[deviceId] = record.device_name;
+                }
             });
-
-            // 計算整體總用電
-            let overallTotal = 0;
-            for (const id in deviceSums) {
-                overallTotal += deviceSums[id];
+            
+            // 對每個裝置找出最新的用電數據
+            for (const deviceId in deviceRecords) {
+                const deviceData = deviceRecords[deviceId];
+                // 如果數據中有日期時間欄位，按時間排序取最新的
+                if (deviceData.length > 0 && deviceData[0].date) {
+                    deviceData.sort((a, b) => {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    latestDeviceUsage[deviceId] = deviceData[0].total_usage || 0;
+                } 
+                // 如果沒有日期欄位，假設記錄是最新的，取用電量最大值
+                else {
+                    latestDeviceUsage[deviceId] = Math.max(...deviceData.map(d => d.total_usage || 0));
+                }
             }
+    
+            // 計算所有裝置的總最新用電量
+            let overallTotal = 0;
+            for (const id in latestDeviceUsage) {
+                overallTotal += Number(latestDeviceUsage[id]);
+            }
+            
+            // 更新UI顯示
             totalPowerElement.textContent = overallTotal.toFixed(2);
             totalCarbonElement.textContent = (overallTotal * carbonPerUnit).toFixed(2);
-
-            // 更新統計區內的各設備統計資料
+    
+            // 更新各裝置統計，使用實際裝置名稱顯示
             let deviceStatsDiv = document.getElementById('deviceStats');
             if (!deviceStatsDiv) {
                 deviceStatsDiv = document.createElement('div');
                 deviceStatsDiv.id = 'deviceStats';
-                // 假設統計區的容器的 id 為 "statistics"
-                const statisticsContainer = document.getElementById('statistics');
-                statisticsContainer.appendChild(deviceStatsDiv);
+                document.getElementById('statistics').appendChild(deviceStatsDiv);
             }
-            // 清空原有內容
             deviceStatsDiv.innerHTML = '';
-            for (const id in deviceSums) {
+            
+            for (const id in latestDeviceUsage) {
                 const p = document.createElement('p');
-                p.textContent = `裝置 ${id} 用電數：${deviceSums[id].toFixed(2)} 度`;
+                // 優先使用裝置名稱
+                const deviceName = deviceNames[id] || deviceNameMap[id] || `裝置 ${id}`;
+                p.textContent = `${deviceName} 用電數：${Number(latestDeviceUsage[id]).toFixed(2)} 度`;
                 deviceStatsDiv.appendChild(p);
             }
         } catch (error) {
@@ -515,7 +578,7 @@ function initializePage() {
         console.log(`設定自動更新間隔：${interval} 毫秒`);
     }
 
-    // 統整圖表與統計數據更新的函式（請確認此函式已有，若沒有請依之前範例補上）
+    // 統整圖表與統計數據更新的函式
     function updateDashboard() {
         fetchPowerDataAndUpdateChart();
         fetchPowerStats();
