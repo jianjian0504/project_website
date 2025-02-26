@@ -69,28 +69,24 @@ async function fetchPowerData(contractAddress) {
             throw new Error('Contract address is null or undefined');
         }
 
-        // 檢查合約地址格式
         if (!web3.utils.isAddress(contractAddress)) {
             throw new Error(`Invalid contract address format: ${contractAddress}`);
         }
 
-        // 建立合約實例
         console.log('正在建立合約實例...');
         const contract = new web3.eth.Contract(contractABI, contractAddress);
         
-        // 檢查合約方法
-        console.log('可用的合約方法:', Object.keys(contract.methods));
-        
-        // 調用合約的 getData 方法
         console.log('正在調用 getData 方法...');
         const data = await contract.methods.getData().call();
         console.log(`從合約 ${contractAddress} 獲取的原始數據:`, data);
-        
-        // 檢查數據是否為 JSON 格式
+
+        // 嘗試解析 JSON
         try {
             const jsonData = JSON.parse(data);
-            if (jsonData.powerUsage) {
-                const powerUsage = parseFloat(jsonData.powerUsage);
+
+            if (jsonData.result && jsonData.result.total_energy) {
+                // 嘗試解析 total_energy
+                const powerUsage = parseFloat(jsonData.result.total_energy);
                 if (!isNaN(powerUsage)) {
                     console.log(`成功解析用電數據: ${powerUsage} kWh`);
                     return powerUsage;
@@ -99,21 +95,23 @@ async function fetchPowerData(contractAddress) {
         } catch (e) {
             console.log('數據不是 JSON 格式，嘗試直接解析數字');
         }
-        
-        // 假設返回的數據是數字字串，需要轉換成數字
+
+        // 若無法解析 JSON，則嘗試解析為數字
         const powerUsage = parseFloat(data);
         if (isNaN(powerUsage)) {
             console.log('收到非數字數據:', data);
             return 0;
         }
-        
+
         console.log(`成功解析用電數據: ${powerUsage} kWh`);
         return powerUsage;
     } catch (error) {
         console.error(`從合約 ${contractAddress} 獲取數據時發生錯誤:`, error);
-        throw error;
+        return 0;
     }
 }
+
+
 
 // 從資料庫獲取所有裝置
 async function getDevicesFromDB() {
@@ -199,7 +197,7 @@ async function startListening() {
 
 // 定期執行
 console.log('正在啟動監聽程序...');
-setInterval(startListening, 60000); // 每分鐘執行一次
+setInterval(startListening, 6000); // 每分鐘執行一次
 
 // 立即執行第一次
 console.log('執行第一次監聽...');
