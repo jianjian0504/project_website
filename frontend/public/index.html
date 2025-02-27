@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>戀上碳追蹤 - 登入</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
@@ -16,6 +16,19 @@
             background: linear-gradient(to right, #4facfe, #00f2fe);
             font-family: 'Poppins', sans-serif;
             overflow: hidden;
+            position: relative;
+        }
+
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
+            background-size: cover;
+            opacity: 0.3;
+            z-index: -1;
         }
 
         .container {
@@ -27,35 +40,30 @@
             width: 100%;
             text-align: center;
             animation: fadeIn 1s ease-in-out;
+            z-index: 1;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        h2 {
-            margin-bottom: 20px;
+        h1 {
+            margin-bottom: 10px;
             color: #333;
             font-weight: 600;
             animation: slideIn 1s ease-in-out;
         }
 
+        p {
+            margin-bottom: 20px;
+            color: #555;
+            font-weight: 300;
+        }
+
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         label {
@@ -113,10 +121,77 @@
             margin-top: 10px;
             display: inline-block;
         }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #d1f1ff;
+        }
+
+        /* 自訂彈窗樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 300px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-btn {
+            margin-top: 15px;
+            padding: 8px 20px;
+            background: #4facfe;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: #00f2fe;
+        }
     </style>
 </head>
 <body>
+    <div class="background-image"></div>
+    
     <div class="container">
+        <h1>歡迎來到戀上碳追蹤</h1>
+        <p>追蹤您的碳足跡，共同守護地球</p>
         <h2>登入</h2>
         <form id="loginForm">
             <label for="username">帳號:</label>
@@ -129,8 +204,21 @@
         <a href="register.html" class="toggle-link">還沒有帳號？註冊</a> 
     </div>
 
+    <div class="footer">
+        <a href="#" id="about-link">關於我們</a> |
+        <a href="#" id="privacy-link">隱私政策</a>
+    </div>
+
+    <!-- 自訂彈窗 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <p id="modal-text"></p>
+            <button class="close-btn" id="close-modal">關閉</button>
+        </div>
+    </div>
+
     <script>
-        //登入表單提交事件
+        // 登入表單提交事件
         document.getElementById('loginForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const formData = new URLSearchParams(new FormData(event.target));
@@ -140,16 +228,14 @@
                 const response = await fetch('/login', {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 });
 
                 const result = await response.json();
                 if (result.success) {
                     messageDiv.style.color = 'green';
                     messageDiv.textContent = '登入成功！即將跳轉...';
-                    setTimeout(() => window.location.href = '/main.html', 1500);
+                    setTimeout(() => window.location.href = '/main.html', 1000);
                 } else {
                     messageDiv.style.color = 'red';
                     messageDiv.textContent = '登入失敗: ' + result.message;
@@ -158,6 +244,32 @@
                 messageDiv.style.color = 'red';
                 messageDiv.textContent = '登入過程中出現錯誤，請稍後再試。';
             }
+        });
+
+        // 彈窗控制
+        const modal = document.getElementById('modal');
+        const modalText = document.getElementById('modal-text');
+        const closeModal = document.getElementById('close-modal');
+
+        function showModal(text) {
+            modalText.textContent = text;
+            modal.style.display = 'flex';
+        }
+
+        closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // 隱私政策
+        document.getElementById('privacy-link').addEventListener('click', (event) => {
+            event.preventDefault();
+            showModal('本網站所搜集的資料僅作本專題使用，不會作為其他用途');
+        });
+
+        // 關於我們
+        document.getElementById('about-link').addEventListener('click', (event) => {
+            event.preventDefault();
+            showModal('我們是宜大電子工程學系  contact us:B1142017@ems.niu.edu.tw');
         });
     </script>
 </body>
