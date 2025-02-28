@@ -27,7 +27,7 @@
                     <nav>
                         <ul>
                             <li><a href="settings.html" id="settingsLink">設定</a></li>
-                                <li><a href="#" id="logoutLink">登出</a></li>
+                            <li><a href="#" id="logoutLink">登出</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -37,11 +37,11 @@
             <section class="info-section">
                 <h2>用電資訊與碳排放</h2>
                 <label for="chartSelector">選擇數據類型：</label>
-                <select id="chartSelector">
+                    <select id="chartSelector">
                     <option value="power">用電資訊</option>
                     <option value="carbon">碳排放</option>
                 </select>
-                <br>
+                <br> 
                 <label for="deviceSelector">選擇裝置：</label>
                 <select id="deviceSelector" multiple></select>
                 <br>
@@ -77,7 +77,7 @@
                     </select>
                 </div>
                 <div class="chart-container">
-                    <canvas id="statsChart"></canvas>
+                    <canvas id="statsChart"></canvas> <!--用電數據圖表-->
                 </div>
             </section>
             <section class="statistics-section">

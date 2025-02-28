@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -252,7 +252,7 @@
         const closeModal = document.getElementById('close-modal');
 
         function showModal(text) {
-            modalText.textContent = text;
+            modalText.innerHTML = text;
             modal.style.display = 'flex';
         }
 
@@ -269,7 +269,7 @@
         // 關於我們
         document.getElementById('about-link').addEventListener('click', (event) => {
             event.preventDefault();
-            showModal('我們是宜大電子工程學系  contact us:B1142017@ems.niu.edu.tw');
+            showModal('我們是宜大電子工程學系<br>contact us:B1142017@ems.niu.edu.tw');
         });
     </script>
 </body>

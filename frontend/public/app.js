@@ -39,36 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // DOM 元素參考：顯示用電資訊和區塊鏈訊息
-    const powerInfoDiv = document.getElementById('powerInfo');
-    const blockchainMessagesDiv = document.getElementById('blockchainMessages');
-    const refreshButton = document.getElementById('refreshButton');
 
-    // 建立 WebSocket 連接，與伺服器進行即時通訊
-    const socket = new WebSocket('ws://localhost:3000');
-
-    // 當 WebSocket 連線成功時，顯示確認訊息
-    socket.addEventListener('open', () => {
-        console.log('WebSocket connection established.');
-    });
-
-    // 收到伺服器傳來的區塊鏈訊息後，更新頁面內容
-    socket.addEventListener('message', (event) => {
-        const data = JSON.parse(event.data); // 將 JSON 字串轉為 JavaScript 物件
-
-        // 將區塊鏈訊息新增到區塊鏈訊息區塊
-        blockchainMessagesDiv.innerHTML += `<p>${data.message}</p>`;
-
-        // 若訊息包含用電資訊，則更新相應區塊
-        if (data.powerInfo) {
-            powerInfoDiv.textContent = `用電量: ${data.powerInfo} kWh`;
-        }
-    });
-
-    // 當使用者點擊刷新按鈕時，透過 WebSocket 向伺服器請求最新訊息
-    refreshButton.addEventListener('click', () => {
-        socket.send(JSON.stringify({ action: 'refresh' })); // 傳送刷新指令
-    });
 });
 
 // 綁定註冊表單的提交事件

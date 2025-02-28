@@ -154,6 +154,12 @@ footer {
     border-radius: 0 0 10px 10px;
 }
 
+#chartSelector {
+    margin-bottom: 10px;
+    padding: 5px;
+    font-size: 16px;
+}
+
 canvas {
     width: 100% !important; /* 確保 canvas 填滿寬度 */
     height: 400px !important; /* 固定高度，避免無法顯示 */
@@ -161,6 +167,10 @@ canvas {
     border: 1px solid #ddd; /* 可選：給 canvas 添加邊框，確認邊界 */
     z-index: 100;
     
+}
+#deviceStats p:nth-child(2) {
+    margin-left: 51px; /* 碳排放行縮進 */
+    color: #666; /* 可選：用不同顏色區分碳排放 */
 }
 
 .chart-container {
@@ -252,4 +262,40 @@ nav ul li a:hover {
     padding: 10px;
     border-radius: 4px;
     text-align: center;
+}
+
+
+
+.devices-page {
+    display: block; /* 讓section垂直顯示 */
+    padding: 20px; 
+}
+
+.device-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.device-table th, .device-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.device-table th {
+    background-color: #f2f2f2;
+    color: #333;
+}
+
+.device-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.device-section {
+    margin-bottom: 40px; /* 增加間距 */
+}
+
+.device-list-section {
+    margin-top: 40px; /* 增加間距 */
 }

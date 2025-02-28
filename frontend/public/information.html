@@ -27,7 +27,7 @@
                     <nav>
                         <ul>
                             <li><a href="settings.html" id="settingsLink">設定</a></li>
-                                <li><a href="#" id="logoutLink">登出</a></li>
+                            <li><a href="#" id="logoutLink">登出</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -64,5 +64,23 @@
     </div>
     <script src="information.js"></script>
     <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+        const usernameDisplay = document.getElementById('usernameDisplay'); // 獲取用於顯示用戶名稱的元素
+        
+        });
+if (usernameDisplay) {
+    fetch('/user-info')
+        .then(response => response.json())
+        .then(data => {
+            usernameDisplay.textContent = data.username ? data.username : "訪客";
+        })
+        .catch(error => {
+            console.error("無法取得用戶資訊:", error);
+            usernameDisplay.textContent = "訪客";
+        });
+    }
+    </script>
 </body>
 </html>

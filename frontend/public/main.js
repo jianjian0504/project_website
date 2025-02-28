@@ -32,15 +32,16 @@ function initializePage() {
     let powerChart;
     const carbonPerUnit = 0.494; // 每度電碳排放量（kg）
 
-    // 隨機生成顏色函式 (供 chart 資料集使用)
-    function getRandomColor() {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
-        }
-        return color;
-    }
+    // 定義一組固定的顏色
+const fixedColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A8', '#A833FF', '#33FFF3'];
+// 固定顏色函數
+function getFixedColor(deviceId) {
+    const hash = deviceId.toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = hash % colors.length;
+    return colors[index];
+}
+
+    
 
     // 新增全域變數，儲存各裝置的顏色，避免數據更新時重新取得顏色
     const deviceColors = {};
@@ -108,9 +109,37 @@ function initializePage() {
             }
         });
     }
+    
+    let carbonChart; //初始化碳排放圖表
 
-    // 初始化圖表
-    if (canvas) {
+    function initializeCarbonChart() {
+        const ctx = document.getElementById('carbonChart').getContext('2d');
+        carbonChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: '時間' } },
+                    y: { title: { display: true, text: '碳排放量 (kgCO2e)' }, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: true },
+                    title: { display: true, text: '裝置碳排放量趨勢' }
+                }
+            }
+        });
+    }
+// 在頁面載入時初始化
+document.addEventListener('DOMContentLoaded', () => {
+    initializeCarbonChart();
+});    
+
+// 初始化圖表
+    
+if (canvas) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
             console.log('成功取得 canvas 上下文');
@@ -261,217 +290,272 @@ function initializePage() {
     // 初始化時取得裝置名稱映射
     fetchDeviceNameMap();
 
-    // 新增函式：從 /power-data 取得各裝置的分段用電數據並更新圖表
-    async function fetchPowerDataAndUpdateChart() {
-        try {
-            let url = '/power-data';
-            const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'hour';
-            console.log('當前時間範圍:', currentTimeRange);
-            
-            let queryParams = new URLSearchParams();
-            queryParams.append('timeRange', currentTimeRange);
-            
-            // 根據視圖類型加入對應的日期或月份參數
-            if (currentTimeRange === 'day' && selectedDate.value) {
-                console.log('添加日期參數:', selectedDate.value);
-                queryParams.append('date', selectedDate.value);
-            } else if (currentTimeRange === 'month') {
-                const monthStr = `${selectedYear.value}-${selectedMonth.value}`;
-                queryParams.append('month', monthStr);
+    // 假設這些全局變數已在其他地方定義
+
+// 初始化圖表
+function initializeChart() {
+    const ctx = document.getElementById('powerChart').getContext('2d');
+    powerChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            scales: {
+                x: { title: { display: true, text: '時間' } },
+                y: { title: { display: true, text: '用電量 (kWh)' }, beginAtZero: true }
+            },
+            plugins: {
+                legend: { display: true },
+                title: { display: true, text: '裝置用電量趨勢' }
             }
-            
-            url += '?' + queryParams.toString();
-            console.log('請求 URL:', url);
-            
-            const response = await fetch(url);
-            const result = await response.json();
-            console.log('收到的數據:', result);
-
-            if (!Array.isArray(result)) {
-                console.error("回傳的資料格式不正確，期待陣列，但收到：", result);
-                return;
-            }
-            if (currentTimeRange === 'hour') {
-                const records = result; // records：{ device_id, total_usage, date }
-                records.forEach(record => {
-                    record.parsedEpoch = new Date(record.date.replace(' ', 'T')).getTime();
-                    // 若資料包含device_name，更新裝置名稱映射
-                    if (record.device_name) {
-                        deviceNameMap[record.device_id] = record.device_name;
-                    }
-                });
-
-                const deviceData = {};
-                records.forEach(record => {
-                    const deviceId = record.device_id;
-                    if (!deviceData[deviceId]) {
-                        deviceData[deviceId] = [];
-                    }
-                    deviceData[deviceId].push(record);
-                });
-
-                const labelsSet = new Set();
-                Object.keys(deviceData).forEach(deviceId => {
-                    deviceData[deviceId].sort((a, b) => a.parsedEpoch - b.parsedEpoch);
-                    deviceData[deviceId].forEach(record => {
-                        labelsSet.add(record.parsedEpoch);
-                    });
-                });
-                let sortedEpochs = Array.from(labelsSet).sort((a, b) => a - b);
-                if (sortedEpochs.length === 0) {
-                    const now = Date.now();
-                    sortedEpochs = [now - 4 * 60000, now - 3 * 60000, now - 2 * 60000, now - 60000, now];
-                }
-                const labelsArray = sortedEpochs.map(epoch => new Date(epoch).toLocaleString());
-
-                let selectedDevices = [];
-                if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
-                    const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
-                    if (selected.includes('all')) {
-                        selectedDevices = Object.keys(deviceData);
-                    } else {
-                        selectedDevices = selected;
-                    }
-                } else {
-                    selectedDevices = Object.keys(deviceData);
-                }
-                if (selectedDevices.length === 0) {
-                    selectedDevices = ["No Data"];
-                    deviceData["No Data"] = [];
-                }
-
-                // 生成當前小時60分鐘標籤 (格式 hh:mm)
-                const now = new Date();
-                const currentYear = now.getFullYear();
-                const currentMonth = now.getMonth();
-                const currentDate = now.getDate();
-                const currentHour = now.getHours();
-                const currentLabelsArray = [];
-                for (let m = 0; m < 60; m++) {
-                    const dt = new Date(currentYear, currentMonth, currentDate, currentHour, m);
-                    currentLabelsArray.push(dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}));
-                }
-
-                // 對每個裝置，依據記錄中的分鐘數取用電數值，沒數值則補0
-                const currentDatasets = selectedDevices.map(deviceId => {
-                    const usageMap = {};
-                    (deviceData[deviceId] || []).forEach(record => {
-                        const recordDate = new Date(record.date);
-                        const minute = recordDate.getMinutes();
-                        const key = minute < 10 ? '0' + minute : '' + minute;
-                        usageMap[key] = record.total_usage;
-                    });
-                    const dataArray = [];
-                    for (let m = 0; m < 60; m++) {
-                        const key = m < 10 ? '0' + m : '' + m;
-                        dataArray.push(usageMap[key] !== undefined ? usageMap[key] : 0);
-                    }
-                    const color = deviceColors[deviceId] || (deviceColors[deviceId] = getRandomColor());
-                    // 使用裝置名稱作為標籤
-                    const deviceName = deviceNameMap[deviceId] || `裝置 ${deviceId}`;
-                    return {
-                        label: `${deviceName} 用電量 (kWh)`,
-                        data: dataArray,
-                        borderColor: color,
-                        backgroundColor: hexToRGBA(color, 0.2),
-                        borderWidth: 2,
-                    };
-                });
-                powerChart.data.labels = currentLabelsArray;
-                powerChart.data.datasets = currentDatasets;
-                powerChart.update();
-            } else {
-                const aggregatedRecords = result;
-                // 更新裝置名稱映射
-                aggregatedRecords.forEach(record => {
-                    if (record.device_name) {
-                        deviceNameMap[record.device_id] = record.device_name;
-                    }
-                });
-                
-                const deviceData = {};
-                aggregatedRecords.forEach(record => {
-                    const deviceId = record.device_id;
-                    if (!deviceData[deviceId]) {
-                        deviceData[deviceId] = [];
-                    }
-                    deviceData[deviceId].push(record);
-                });
-
-                let labelsArray = [];
-                if (currentTimeRange === 'day') {
-                    // 以小時為單位，生成全天 24 小時，如 "00:00", "01:00", …, "23:00"
-                    for (let i = 0; i < 24; i++) {
-                        labelsArray.push((i < 10 ? '0' + i : i) + ":00");
-                    }
-                } else if (currentTimeRange === 'week') {
-                    // 生成最近 7 天的日期，格式 "YYYY-MM-DD"
-                    let expected = [];
-                    for (let i = 6; i >= 0; i--) {
-                        let d = new Date();
-                        d.setDate(d.getDate() - i);
-                        expected.push(d.toISOString().slice(0, 10));
-                    }
-                    labelsArray = expected;
-                } else if (currentTimeRange === 'month') {
-                    // 生成本月所有日期，格式 "YYYY-MM-DD"
-                    let now = new Date();
-                    let year = now.getFullYear();
-                    let month = now.getMonth();
-                    let daysInMonth = new Date(year, month + 1, 0).getDate();
-                    let expected = [];
-                    for (let d = 1; d <= daysInMonth; d++) {
-                        let dayStr = d < 10 ? '0' + d : d;
-                        let monStr = (month + 1) < 10 ? '0' + (month + 1) : (month + 1);
-                        expected.push(`${year}-${monStr}-${dayStr}`);
-                    }
-                    labelsArray = expected;
-                } else {
-                    labelsArray = [new Date().toLocaleString()];
-                }
-
-                let selectedDevices = [];
-                if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
-                    const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
-                    if (selected.includes('all')) {
-                        selectedDevices = Object.keys(deviceData);
-                    } else {
-                        selectedDevices = selected;
-                    }
-                } else {
-                    selectedDevices = Object.keys(deviceData);
-                }
-                if (selectedDevices.length === 0) {
-                    selectedDevices = ["No Data"];
-                    deviceData["No Data"] = [];
-                }
-
-                const datasets = selectedDevices.map(deviceId => {
-                    const usageMap = {};
-                    (deviceData[deviceId] || []).forEach(record => {
-                        usageMap[record.label] = record.total_usage;
-                    });
-                    const dataArray = labelsArray.map(label => (usageMap[label] !== undefined ? usageMap[label] : 0));
-                    const color = deviceColors[deviceId] || (deviceColors[deviceId] = getRandomColor());
-                    // 使用裝置名稱作為標籤
-                    const deviceName = deviceNameMap[deviceId] || `裝置 ${deviceId}`;
-                    return {
-                        label: `${deviceName} 用電量 (kWh)`,
-                        data: dataArray,
-                        borderColor: color,
-                        backgroundColor: hexToRGBA(color, 0.2),
-                        borderWidth: 2,
-                    };
-                });
-
-                powerChart.data.labels = labelsArray;
-                powerChart.data.datasets = datasets;
-                powerChart.update();
-            }
-        } catch (error) {
-            console.error('獲取用電資料並更新圖表失敗:', error);
         }
+    });
+}
+
+const colors = [
+    '#FF6384', // 紅色
+    '#36A2EB', // 藍色
+    '#FFCE56', // 黃色
+    '#4BC0C0', // 青色
+    '#9966FF', // 紫色
+    '#FF9F40', // 橙色
+];// 固定顏色函數
+function getFixedColor(deviceId) {
+    const hash = deviceId.toString().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = hash % colors.length;
+    return colors[index];
+}
+
+// 假設這是用來轉換HEX顏色到RGBA的函數
+function hexToRGBA(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+async function fetchPowerDataAndUpdateChart() {
+    try {
+        let url = '/power-data';
+        const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'hour';
+        const chartType = document.getElementById('chartSelector').value; // 獲取當前圖表類型
+        console.log('當前時間範圍:', currentTimeRange, '圖表類型:', chartType);
+        
+        let queryParams = new URLSearchParams();
+        queryParams.append('timeRange', currentTimeRange);
+        
+        if (currentTimeRange === 'day' && selectedDate.value) {
+            queryParams.append('date', selectedDate.value);
+        } else if (currentTimeRange === 'month') {
+            const monthStr = `${selectedYear.value}-${selectedMonth.value}`;
+            queryParams.append('month', monthStr);
+        }
+        
+        url += '?' + queryParams.toString();
+        console.log('請求 URL:', url);
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        console.log('收到的數據:', result);
+
+        if (!Array.isArray(result)) {
+            console.error("回傳的資料格式不正確，期待陣列，但收到：", result);
+            return;
+        }
+
+        const carbonFactor = 0.494; // 碳排放係數 kgCO2e/kWh
+
+        // 更新圖表配置
+        powerChart.options.scales.y.title.text = chartType === 'power' ? '用電量 (kWh)' : '碳排放量 (kgCO2e)';
+        powerChart.options.plugins.title.text = chartType === 'power' ? '裝置用電量趨勢' : '裝置碳排放量趨勢';
+
+        if (currentTimeRange === 'hour') {
+            const records = result;
+            records.forEach(record => {
+                record.parsedEpoch = new Date(record.date.replace(' ', 'T')).getTime();
+                if (record.device_name) {
+                    deviceNameMap[record.device_id] = record.device_name;
+                }
+            });
+
+            const deviceData = {};
+            records.forEach(record => {
+                const deviceId = record.device_id;
+                if (!deviceData[deviceId]) {
+                    deviceData[deviceId] = [];
+                }
+                deviceData[deviceId].push(record);
+            });
+
+            const labelsSet = new Set();
+            Object.keys(deviceData).forEach(deviceId => {
+                deviceData[deviceId].sort((a, b) => a.parsedEpoch - b.parsedEpoch);
+                deviceData[deviceId].forEach(record => {
+                    labelsSet.add(record.parsedEpoch);
+                });
+            });
+            let sortedEpochs = Array.from(labelsSet).sort((a, b) => a - b);
+            if (sortedEpochs.length === 0) {
+                const now = Date.now();
+                sortedEpochs = [now - 4 * 60000, now - 3 * 60000, now - 2 * 60000, now - 60000, now];
+            }
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            const currentDate = now.getDate();
+            const currentHour = now.getHours();
+            const currentLabelsArray = [];
+            for (let m = 0; m < 60; m++) {
+                const dt = new Date(currentYear, currentMonth, currentDate, currentHour, m);
+                currentLabelsArray.push(dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}));
+            }
+
+            let selectedDevices = [];
+            if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
+                const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
+                if (selected.includes('all')) {
+                    selectedDevices = Object.keys(deviceData);
+                } else {
+                    selectedDevices = selected;
+                }
+            } else {
+                selectedDevices = Object.keys(deviceData);
+            }
+            if (selectedDevices.length === 0) {
+                selectedDevices = ["No Data"];
+                deviceData["No Data"] = [];
+            }
+
+            const datasets = selectedDevices.map(deviceId => {
+                const usageMap = {};
+                (deviceData[deviceId] || []).forEach(record => {
+                    const recordDate = new Date(record.date);
+                    const minute = recordDate.getMinutes();
+                    const key = minute < 10 ? '0' + minute : '' + minute;
+                    usageMap[key] = record.total_usage;
+                });
+                const dataArray = [];
+                for (let m = 0; m < 60; m++) {
+                    const key = m < 10 ? '0' + m : '' + m;
+                    dataArray.push(usageMap[key] !== undefined ? usageMap[key] : 0);
+                };
+                const finalData = chartType === 'power' ? dataArray : dataArray.map(usage => usage * carbonFactor);
+                const color = deviceColors[deviceId] || (deviceColors[deviceId] = getFixedColor(deviceId));
+                const deviceName = deviceNameMap[deviceId] || `裝置 ${deviceId}`;
+                return {
+                    label: `${deviceName} ${chartType === 'power' ? '用電量 (kWh)' : '碳排放量 (kgCO2e)'}`,
+                    data: finalData,
+                    borderColor: color,
+                    backgroundColor: hexToRGBA(color, 0.2),
+                    borderWidth: 2,
+                };
+            });
+
+            powerChart.data.labels = currentLabelsArray;
+            powerChart.data.datasets = datasets;
+            powerChart.update();
+        } else {
+            const aggregatedRecords = result;
+            aggregatedRecords.forEach(record => {
+                if (record.device_name) {
+                    deviceNameMap[record.device_id] = record.device_name;
+                }
+            });
+            
+            const deviceData = {};
+            aggregatedRecords.forEach(record => {
+                const deviceId = record.device_id;
+                if (!deviceData[deviceId]) {
+                    deviceData[deviceId] = [];
+                }
+                deviceData[deviceId].push(record);
+            });
+
+            let labelsArray = [];
+            if (currentTimeRange === 'day') {
+                for (let i = 0; i < 24; i++) {
+                    labelsArray.push((i < 10 ? '0' + i : i) + ":00");
+                }
+            } else if (currentTimeRange === 'week') {
+                let expected = [];
+                for (let i = 6; i >= 0; i--) {
+                    let d = new Date();
+                    d.setDate(d.getDate() - i);
+                    expected.push(d.toISOString().slice(0, 10));
+                }
+                labelsArray = expected;
+            } else if (currentTimeRange === 'month') {
+                let now = new Date();
+                let year = now.getFullYear();
+                let month = now.getMonth();
+                let daysInMonth = new Date(year, month + 1, 0).getDate();
+                let expected = [];
+                for (let d = 1; d <= daysInMonth; d++) {
+                    let dayStr = d < 10 ? '0' + d : d;
+                    let monStr = (month + 1) < 10 ? '0' + (month + 1) : (month + 1);
+                    expected.push(`${year}-${monStr}-${dayStr}`);
+                }
+                labelsArray = expected;
+            } else {
+                labelsArray = [new Date().toLocaleString()];
+            }
+
+            let selectedDevices = [];
+            if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
+                const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
+                if (selected.includes('all')) {
+                    selectedDevices = Object.keys(deviceData);
+                } else {
+                    selectedDevices = selected;
+                }
+            } else {
+                selectedDevices = Object.keys(deviceData);
+            }
+            if (selectedDevices.length === 0) {
+                selectedDevices = ["No Data"];
+                deviceData["No Data"] = [];
+            }
+
+            const datasets = selectedDevices.map(deviceId => {
+                const usageMap = {};
+                (deviceData[deviceId] || []).forEach(record => {
+                    usageMap[record.label] = record.total_usage;
+                });
+                const dataArray = labelsArray.map(label => (usageMap[label] !== undefined ? usageMap[label] : 0));
+                const finalData = chartType === 'power' ? dataArray : dataArray.map(usage => usage * carbonFactor);
+                const color = deviceColors[deviceId] || (deviceColors[deviceId] = getFixedColor(deviceId));
+                const deviceName = deviceNameMap[deviceId] || `裝置 ${deviceId}`;
+                return {
+                    label: `${deviceName} ${chartType === 'power' ? '用電量 (kWh)' : '碳排放量 (kgCO2e)'}`,
+                    data: finalData,
+                    borderColor: color,
+                    backgroundColor: hexToRGBA(color, 0.2),
+                    borderWidth: 2,
+                };
+            });
+
+            powerChart.data.labels = labelsArray;
+            powerChart.data.datasets = datasets;
+            powerChart.update();
+        }
+    } catch (error) {
+        console.error('獲取用電資料並更新圖表失敗:', error);
     }
+}
+
+// 監聽圖表選擇器變化
+document.addEventListener('DOMContentLoaded', () => {
+    initializeChart();
+    fetchPowerDataAndUpdateChart(); // 初始載入
+
+    const chartSelector = document.getElementById('chartSelector');
+    chartSelector.addEventListener('change', () => {
+        fetchPowerDataAndUpdateChart(); // 當選擇改變時重新獲取數據並更新圖表
+    });
+});
 
     // 修改：更新方法來取得最新用電統計數據
     async function fetchPowerStats() {
@@ -482,6 +566,9 @@ function initializePage() {
             url += '?timeRange=' + currentTimeRange;
             const response = await fetch(url);
             const records = await response.json();
+    
+            // 碳排放係數
+            const carbonPerUnit = 0.494; // kgCO2e/kWh
     
             // 建立裝置ID到最新用電數據的映射
             const latestDeviceUsage = {};
@@ -499,38 +586,33 @@ function initializePage() {
                 // 儲存裝置名稱
                 if (record.device_name) {
                     deviceNames[deviceId] = record.device_name;
-                    // 同時更新全域的裝置名稱映射
-                    deviceNameMap[deviceId] = record.device_name;
+                    deviceNameMap[deviceId] = record.device_name; // 更新全域映射
                 }
             });
             
             // 對每個裝置找出最新的用電數據
             for (const deviceId in deviceRecords) {
                 const deviceData = deviceRecords[deviceId];
-                // 如果數據中有日期時間欄位，按時間排序取最新的
                 if (deviceData.length > 0 && deviceData[0].date) {
-                    deviceData.sort((a, b) => {
-                        return new Date(b.date) - new Date(a.date);
-                    });
+                    deviceData.sort((a, b) => new Date(b.date) - new Date(a.date));
                     latestDeviceUsage[deviceId] = deviceData[0].total_usage || 0;
-                } 
-                // 如果沒有日期欄位，假設記錄是最新的，取用電量最大值
-                else {
+                } else {
                     latestDeviceUsage[deviceId] = Math.max(...deviceData.map(d => d.total_usage || 0));
                 }
             }
     
-            // 計算所有裝置的總最新用電量
-            let overallTotal = 0;
+            // 計算所有裝置的總最新用電量和總碳排放
+            let overallTotalPower = 0;
             for (const id in latestDeviceUsage) {
-                overallTotal += Number(latestDeviceUsage[id]);
+                overallTotalPower += Number(latestDeviceUsage[id]);
             }
-            
-            // 更新UI顯示
-            totalPowerElement.textContent = overallTotal.toFixed(2);
-            totalCarbonElement.textContent = (overallTotal * carbonPerUnit).toFixed(2);
+            const overallTotalCarbon = overallTotalPower * carbonPerUnit;
     
-            // 更新各裝置統計，使用實際裝置名稱顯示
+            // 更新總覽 UI
+            totalPowerElement.textContent = overallTotalPower.toFixed(2);
+            totalCarbonElement.textContent = overallTotalCarbon.toFixed(2);
+    
+            // 更新各裝置統計
             let deviceStatsDiv = document.getElementById('deviceStats');
             if (!deviceStatsDiv) {
                 deviceStatsDiv = document.createElement('div');
@@ -538,13 +620,25 @@ function initializePage() {
                 document.getElementById('statistics').appendChild(deviceStatsDiv);
             }
             deviceStatsDiv.innerHTML = '';
-            
+    
             for (const id in latestDeviceUsage) {
-                const p = document.createElement('p');
-                // 優先使用裝置名稱
+                const deviceDiv = document.createElement('div'); // 每個裝置獨立一個 div
                 const deviceName = deviceNames[id] || deviceNameMap[id] || `裝置 ${id}`;
-                p.textContent = `${deviceName} 用電數：${Number(latestDeviceUsage[id]).toFixed(2)} 度`;
-                deviceStatsDiv.appendChild(p);
+                const powerUsage = Number(latestDeviceUsage[id]).toFixed(2);
+                const carbonEmission = (latestDeviceUsage[id] * carbonPerUnit).toFixed(2);
+    
+                // 創建用電數據行
+                const powerP = document.createElement('p');
+                powerP.textContent = `${deviceName} 用電數：${powerUsage} 度`;
+                
+                // 創建碳排放行
+                const carbonP = document.createElement('p');
+                carbonP.textContent = `       碳排放：${carbonEmission} kgCO2e`; // 縮進以顯示在下方
+                
+                // 添加到裝置 div
+                deviceDiv.appendChild(powerP);
+                deviceDiv.appendChild(carbonP);
+                deviceStatsDiv.appendChild(deviceDiv);
             }
         } catch (error) {
             console.error('獲取統計數據失敗:', error);

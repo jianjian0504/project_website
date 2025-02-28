@@ -122,12 +122,18 @@ app.get('/power-data', isAuthenticated, (req, res) => {
 
     if (chosenMonth) {
         query = `
-          SELECT pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d') AS label, SUM(pd.power_usage) AS total_usage
-          FROM power_data pd
-          JOIN devices d ON pd.device_id = d.id
-          WHERE pd.user_id = ? AND DATE_FORMAT(pd.date, '%Y-%m') = ?
-          GROUP BY pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d')
-          ORDER BY pd.device_id, label ASC;
+            SELECT 
+                pd.device_id,
+                
+                pd.power_usage AS total_usage,
+                pd.date,
+                DATE_FORMAT(pd.date, '%Y-%m-%d') AS label
+            FROM power_data pd
+            JOIN devices d ON pd.device_id = d.id
+            WHERE 
+                pd.user_id = ? 
+                AND DATE_FORMAT(pd.date, '%Y-%m') = ?
+            ORDER BY pd.device_id, pd.date ASC;
         `;
         params.push(chosenMonth);
     } else {
@@ -136,7 +142,6 @@ app.get('/power-data', isAuthenticated, (req, res) => {
             query = `
               SELECT 
                   pd.device_id,
-                  d.device_name,
                   pd.power_usage AS total_usage,
                   pd.date,
                   DATE_FORMAT(pd.date, '%H:00') AS label
@@ -157,50 +162,68 @@ app.get('/power-data', isAuthenticated, (req, res) => {
             } else {
                 dateCondition = 'DATE(pd.date) = DATE(NOW())';
             }
-
+        
             query = `
-                SELECT pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%H:00') AS label, SUM(pd.power_usage) AS total_usage
+                SELECT 
+                    pd.device_id,
+                    pd.power_usage AS total_usage,
+                    pd.date,
+                    DATE_FORMAT(pd.date, '%H:00') AS label
                 FROM power_data pd
                 JOIN devices d ON pd.device_id = d.id
-                WHERE pd.user_id = ? 
-                AND ${dateCondition}
-                AND pd.date <= NOW()
-                GROUP BY pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%H:00')
-                ORDER BY pd.device_id, label ASC;
+                WHERE 
+                    pd.user_id = ? 
+                    AND ${dateCondition}
+                    AND pd.date <= NOW()
+                ORDER BY pd.device_id, pd.date ASC;
             `;
         } else if (timeRange === 'week') {
             query = `
-              SELECT pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d') AS label, SUM(pd.power_usage) AS total_usage
-              FROM power_data pd
-              JOIN devices d ON pd.device_id = d.id
-              WHERE pd.user_id = ? 
-              AND YEARWEEK(pd.date) = YEARWEEK(NOW())
-              AND pd.date <= NOW()
-              GROUP BY pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d')
-              ORDER BY pd.device_id, label ASC;
+                SELECT 
+                    pd.device_id,
+                    pd.power_usage AS total_usage,
+                    pd.date,
+                    DATE_FORMAT(pd.date, '%Y-%m-%d') AS label
+                FROM power_data pd
+                JOIN devices d ON pd.device_id = d.id
+                WHERE 
+                    pd.user_id = ? 
+                    AND YEARWEEK(pd.date) = YEARWEEK(NOW())
+                    AND pd.date <= NOW()
+                ORDER BY pd.device_id, pd.date ASC;
             `;
         } else if (timeRange === 'month') {
             query = `
-              SELECT pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d') AS label, SUM(pd.power_usage) AS total_usage
-              FROM power_data pd
-              JOIN devices d ON pd.device_id = d.id
-              WHERE pd.user_id = ? 
-              AND DATE_FORMAT(pd.date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
-              AND pd.date <= NOW()
-              GROUP BY pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d')
-              ORDER BY pd.device_id, label ASC;
+                SELECT 
+                    pd.device_id,
+                    pd.power_usage AS total_usage,
+                    pd.date,
+                    DATE_FORMAT(pd.date, '%Y-%m-%d') AS label
+                FROM power_data pd
+                JOIN devices d ON pd.device_id = d.id
+                WHERE 
+                    pd.user_id = ? 
+                    AND DATE_FORMAT(pd.date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+                    AND pd.date <= NOW()
+                ORDER BY pd.device_id, pd.date ASC;
             `;
         } else {
             query = `
-              SELECT pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d') AS label, SUM(pd.power_usage) AS total_usage
-              FROM power_data pd
-              JOIN devices d ON pd.device_id = d.id
-              WHERE pd.user_id = ? AND pd.date >= DATE_SUB(NOW(), INTERVAL 1 DAY)
-              GROUP BY pd.device_id, d.device_name, DATE_FORMAT(pd.date, '%Y-%m-%d')
-              ORDER BY pd.device_id, label ASC;
+                SELECT 
+                    pd.device_id,
+                    pd.power_usage AS total_usage,
+                    pd.date,
+                    DATE_FORMAT(pd.date, '%Y-%m-%d') AS label
+                FROM power_data pd
+                JOIN devices d ON pd.device_id = d.id
+                WHERE 
+                    pd.user_id = ? 
+                    AND pd.date >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+                ORDER BY pd.device_id, pd.date ASC;
             `;
         }
     }
+    
 
     db.query(query, params, (err, results) => {
         if (err) {
@@ -209,11 +232,12 @@ app.get('/power-data', isAuthenticated, (req, res) => {
         }
         res.json(results);
     });
-});
+}
+);
 
 // ======== 取得個人統計數據 API ========
 // 此 API 回傳整體（所有裝置）的時序數據，使用資料庫完成累計加總統計，再將結果傳回前端
-app.get('/power-stats', isAuthenticated, (req, res) => {
+/*app.get('/power-stats', isAuthenticated, (req, res) => {
     const userId = req.session.user.id;
     const timeRange = req.query.timeRange || 'day';
     
@@ -265,10 +289,10 @@ app.get('/power-stats', isAuthenticated, (req, res) => {
             res.json({ overallTimeseries: [row.total_usage] });
         });
     }
-});
+});*/
 
 // ======== 儲存用電資訊 API ========
-app.post('/power-data', isAuthenticated, (req, res) => {
+/*app.post('/power-data', isAuthenticated, (req, res) => {
     const userId = req.session.user.id;
     const { powerUsage, date } = req.body;
 
@@ -277,7 +301,7 @@ app.post('/power-data', isAuthenticated, (req, res) => {
         if (err) return res.status(500).json({ message: '儲存失敗' });
         res.json({ success: true, message: '用電資訊已儲存' });
     });
-});
+});*/
 
 
 // ======== 新增裝置 API ========
