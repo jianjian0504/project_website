@@ -28,8 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 previewImage.src = e.target.result;
-                // 儲存 base64 字串供後續使用
-                previewImage.dataset.base64 = e.target.result;
+                previewImage.dataset.base64 = e.target.result; // 儲存 base64 字串
             };
             reader.readAsDataURL(file);
         }
@@ -39,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         settingsMessage.textContent = '正在儲存...';
-        
+
         const data = {
             email: document.getElementById('email').value,
             profilePic: previewImage.dataset.base64 || previewImage.src
@@ -57,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (result.success) {
                 settingsMessage.style.color = 'green';
-                settingsMessage.textContent = '設定已儲存！';
+                settingsMessage.textContent = '設定已儲存並發送確認信！';
                 // 更新頁面上的大頭貼
                 document.querySelector('.profile-pic').src = data.profilePic;
             } else {
@@ -77,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             try {
                 const response = await fetch('/logout');
-                const result = await response.json();
                 if (response.ok) {
                     window.location.href = 'index.html';
                 }
@@ -89,4 +87,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 載入現有設定
     loadCurrentSettings();
+});
+
+// 顯示用戶名稱（保持不變）
+document.addEventListener('DOMContentLoaded', () => {
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    if (usernameDisplay) {
+        fetch('/user-info')
+            .then(response => response.json())
+            .then(data => {
+                usernameDisplay.textContent = data.username || '訪客';
+            })
+            .catch(error => {
+                console.error('無法取得用戶資訊:', error);
+                usernameDisplay.textContent = '訪客';
+            });
+    }
 });

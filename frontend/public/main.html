@@ -20,7 +20,7 @@
             </nav>
             <div class="profile-container">
                 <a href="#" id="profileLink" class="profile-link">
-                    <img src="nickstar.png" alt="User Profile" class="profile-pic">
+                    <img src="default.png" alt="User Profile" class="profile-pic">
                 </a>
                 <span id="usernameDisplay" style="margin-left: 8px; font-weight: bold;"></span>
                 <div id="profileMenu" class="profile-menu">
@@ -42,40 +42,42 @@
                     <option value="carbon">碳排放</option>
                 </select>
                 <br> 
-                <label for="deviceSelector">選擇裝置：</label>
-                <select id="deviceSelector" multiple></select>
-                <br>
-                <label for="timeRangeSelector">選擇時間範圍：</label>
-                <select id="timeRangeSelector">
-                    <option value="hour">小時</option>
-                    <option value="day">日</option>
-                    <option value="week">週</option>
-                    <option value="month">月</option>
-                </select>
-                <div id="dateRangeContainer" style="margin-top: 10px;">
-                    <label for="selectedDate">選擇日期：</label>
-                    <input type="date" id="selectedDate">
-                </div>
-                <div id="monthRangeContainer" style="margin-top: 10px;">
-                    <label for="selectedMonth">選擇月份：</label>
-                    <select id="selectedYear" style="margin-right: 5px;">
-                        <!-- 年份選項會由 JavaScript 動態生成 -->
+                <div class="form-container">
+                    <label for="deviceSelector">選擇裝置：</label>
+                    <select id="deviceSelector"></select>
+                    <br>
+                    <label for="timeRangeSelector">選擇時間範圍：</label>
+                    <select id="timeRangeSelector">
+                        <option value="hour">小時</option>
+                        <option value="day">日</option>
+                        <option value="week">週</option>
+                        <option value="month">月</option>
                     </select>
-                    <select id="selectedMonth">
-                        <option value="01">1 月</option>
-                        <option value="02">2 月</option>
-                        <option value="03">3 月</option>
-                        <option value="04">4 月</option>
-                        <option value="05">5 月</option>
-                        <option value="06">6 月</option>
-                        <option value="07">7 月</option>
-                        <option value="08">8 月</option>
-                        <option value="09">9 月</option>
-                        <option value="10">10 月</option>
-                        <option value="11">11 月</option>
-                        <option value="12">12 月</option>
-                    </select>
-                </div>
+                    <div id="dateRangeContainer" style="margin-top: 10px;">
+                        <label for="selectedDate">選擇日期：</label>
+                        <input type="date" id="selectedDate">
+                    </div>
+                    <div id="monthRangeContainer" style="margin-top: 10px;">
+                        <label for="selectedMonth">選擇月份：</label>
+                        <select id="selectedYear" style="margin-right: 5px;">
+                            <!-- 年份選項會由 JavaScript 動態生成 -->
+                        </select>
+                        <select id="selectedMonth">
+                            <option value="01">1 月</option>
+                            <option value="02">2 月</option>
+                            <option value="03">3 月</option>
+                            <option value="04">4 月</option>
+                            <option value="05">5 月</option>
+                            <option value="06">6 月</option>
+                            <option value="07">7 月</option>
+                            <option value="08">8 月</option>
+                            <option value="09">9 月</option>
+                            <option value="10">10 月</option>
+                            <option value="11">11 月</option>
+                            <option value="12">12 月</option>
+                        </select>
+                    </div>
+                </div>    
                 <div class="chart-container">
                     <canvas id="statsChart"></canvas> <!--用電數據圖表-->
                 </div>

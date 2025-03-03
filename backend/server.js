@@ -5,30 +5,33 @@ const path = require('path');
 const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
 const http = require('http');  // 需要 http 模組來啟動伺服器
-const WebSocket = require('ws');  // 引入 ws 模組
 const os = require('os');
+const nodemailer = require('nodemailer');
+const fs = require('fs').promises;
 const networkInterfaces = os.networkInterfaces();
+require('dotenv').config(); // 引入並配置 dotenv
 
 const app = express();
 const PORT = 4000;
-
 // ======== MySQL 資料庫連接設置 ========
+
 const db = mysql.createConnection({
-    host: '120.101.8.216',
-    user: 'username',
-    password: 'password',
-    database: 'sql_account',
-    port: 3306,
-    //timezone: 'UTC+8' // 使用 UTC+8 的偏移量
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT,
 });
 
+// 這段程式碼在 `mysql2/promise` 不能用
 db.connect((err) => {
     if (err) {
-        console.error('資料庫連線錯誤:', err);
+        console.error('❌ 連線失敗:', err);
     } else {
-        console.log('已成功連接 MySQL 資料庫。');
+        console.log('✅ MySQL 連線成功');
     }
 });
+
 
 // ======== 中間件設置 ========
 app.use(bodyParser.json());
@@ -188,7 +191,8 @@ app.get('/power-data', isAuthenticated, (req, res) => {
                 JOIN devices d ON pd.device_id = d.id
                 WHERE 
                     pd.user_id = ? 
-                    AND YEARWEEK(pd.date) = YEARWEEK(NOW())
+                    AND pd.date >= DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY)
+                    AND pd.date < DATE_ADD(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY), INTERVAL 7 DAY)
                     AND pd.date <= NOW()
                 ORDER BY pd.device_id, pd.date ASC;
             `;
@@ -234,6 +238,96 @@ app.get('/power-data', isAuthenticated, (req, res) => {
     });
 }
 );
+
+
+// Nodemailer 設定 (使用 Gmail 為例)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    }
+});
+
+// 儲存設定並發送 email
+app.post('/settings', async (req, res) => {
+    const { email, profilePic } = req.body;
+    const userId = req.session.user?.id;
+
+    if (!email || !userId) {
+        return res.status(400).json({ success: false, message: 'Email 和 userId 為必填欄位' });
+    }
+
+    try {
+        console.log('儲存資料:', { email, userId });
+        const queryResult = await db.execute(
+            'UPDATE users SET email = ? WHERE id = ?',
+            [email, userId]
+        );
+        console.log('查詢結果:', queryResult);
+
+        let profilePicUrl = null;
+        if (profilePic && profilePic.startsWith('data:image')) {
+            const base64Data = profilePic.replace(/^data:image\/\w+;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+            const fileName = `profile_${userId}_${Date.now()}.png`;
+            const filePath = path.join(__dirname, 'public/uploads', fileName);
+            await fs.writeFile(filePath, buffer);
+            profilePicUrl = `/uploads/${fileName}`;
+
+            const updatePicResult = await db.execute(
+                'UPDATE users SET profile_pic_url = ? WHERE id = ?',
+                [profilePicUrl, userId]
+            );
+            console.log('大頭照更新結果:', updatePicResult);
+        }
+
+        const mailOptions = {
+            from: 'nicknicklive123@gmail.com',
+            to: email,
+            subject: '設定更新確認',
+            html: `<h2>設定已更新</h2><p>您的 email 已更新為：${email}</p>`
+        };
+        await transporter.sendMail(mailOptions);
+
+        res.json({ success: true, profilePicUrl });
+    } catch (error) {
+        console.error('儲存設定失敗:', error);
+        res.status(500).json({ success: false, message: '儲存設定失敗', error: error.message });
+    }
+});
+
+app.get('/user-info', async (req, res) => {
+    const userId = req.session.user?.id;
+    console.log('User ID from session:', userId); // 檢查 session
+
+    if (!userId) {
+        return res.json({
+            username: '訪客',
+            profilePicUrl: 'default.png',
+            email: '尚未註冊',
+        });
+    }
+
+    try {
+        const [rows] = await db.execute(
+            'SELECT username, email, profile_pic_url FROM users WHERE id = ?',
+            [userId]
+        );
+        const user = rows[0];
+        console.log('查詢結果:', user); // 檢查查詢結果
+
+        res.json({
+            username: user?.username || '訪客',
+            profilePicUrl: user?.profile_pic_url || 'default.png',
+            email: user?.email || '尚未註冊',
+        });
+    } catch (error) {
+        console.error('獲取用戶資訊失敗:', error);
+        res.status(500).json({ error: '無法獲取用戶資訊' });
+    }
+});
+
 
 
 // ======== 新增裝置 API ========
@@ -343,7 +437,7 @@ function getLocalIPAddress() {
     return 'localhost'; // 如果無法找到 IP，就返回 localhost
 }
 
-// 使用 http 模組建立 HTTP 伺服器，讓 WebSocket 等功能也能正常運作
+// 使用 http 模組建立 HTTP 伺服器
 const server = http.createServer(app);
 
 // 啟動伺服器
@@ -351,4 +445,3 @@ server.listen(PORT, '0.0.0.0', () => {
     const localIP = getLocalIPAddress();
     console.log(`伺服器運行於 http://${localIP}:${PORT}`);
 });
-

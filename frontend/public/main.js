@@ -716,3 +716,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html'; // 獲取當前頁面文件名
+    const navLinks = document.querySelectorAll('nav ul li a');
+  
+    navLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href === currentPage) {
+        link.classList.add('active'); // 為當前頁面連結添加 active 類
+      }
+    });
+  });

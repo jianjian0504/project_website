@@ -102,12 +102,21 @@ header {
 }
 
 main {
+    flex: 1; /* 讓 main 填充剩餘空間 */
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* 水平分佈子元素 */
     gap: 20px;
-}
+  }
+  
+  /* 確保 main 內的子元素填充高度 */
+  main > * {
+    flex: 1 0 auto; /* 讓子元素在水平方向有彈性，但垂直方向自動填充 */
+    min-height: 0; /* 防止子元素高度溢出 */
+  }
 
 .info-section, .message-section {
+    padding-right: 320px; /* 留出統計數據寬度 (250px) + 間距 (20px) */
+    max-width: 1100px; /* 頁面最大寬度，可依需求調整 */
     background: white;
     padding: 20px;
     border-radius: 10px;
@@ -155,10 +164,26 @@ footer {
 }
 
 #chartSelector {
-    margin-bottom: 10px;
-    padding: 5px;
+    margin-bottom: 20px;
+    padding: 10px 15px;
     font-size: 16px;
-}
+    border: none;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  #chartSelector:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+  }
+  
+  #chartSelector:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(94,114,228,0.5);
+  }
 
 canvas {
     width: 100% !important; /* 確保 canvas 填滿寬度 */
@@ -179,41 +204,144 @@ canvas {
     height: 400px; /* 確保圖表有足夠的高度 */
 }
 
+/* 裝置區塊樣式 */
+/* 裝置區塊樣式 */
 .device-section {
-    margin-top: 20px;
-}
-
-#deviceMessage {
-    margin-top: 10px;
-    font-size: 14px;
-}
+    background-color: #f8f9fa; /* 淺灰背景 */
+    border-radius: 8px; /* 圓角略放大 */
+    padding: 16px; /* 內距從 12px 放大到 16px */
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.07); /* 陰影略增強 */
+    max-width: 540px; /* 最大寬度從 480px 放大到 540px */
+    margin: 15px auto; /* 外邊距從 10px 放大到 15px */
+  }
+  
+  /* 標題樣式 */
+  .device-section h2 {
+    font-size: 18px; /* 字體從 16px 放大到 18px */
+    color: #343a40; /* 深色文字 */
+    margin: 0 0 16px 0; /* 底部間距從 12px 放大到 16px */
+    padding-bottom: 8px; /* 底邊內距從 6px 放大到 8px */
+    border-bottom: 1px solid #e9ecef; /* 下底線 */
+  }
+  
+  /* 表單樣式 */
+  #deviceForm {
+    display: flex;
+    flex-direction: column; /* 垂直排列 */
+    gap: 12px; /* 元素間距從 8px 放大到 12px */
+  }
+  
+  /* 標籤樣式 */
+  #deviceForm label {
+    font-weight: 600; /* 粗體 */
+    color: #343a40; /* 深色文字 */
+    font-size: 14px; /* 字體從 13px 放大到 14px */
+    margin-bottom: 4px; /* 底部間距從 2px 放大到 4px */
+  }
+  
+  /* 輸入框樣式 */
+  #deviceForm input[type="text"] {
+    width: 97%; /* 寬度保持不變 */
+    padding: 8px 10px; /* 內距從 6px 8px 放大到 8px 10px */
+    border: 1px solid #dee2e6; /* 邊框 */
+    border-radius: 5px; /* 圓角從 4px 放大到 5px */
+    font-size: 14px; /* 字體從 13px 放大到 14px */
+    color: #495057; /* 文字顏色 */
+    background-color: white; /* 背景色 */
+    transition: all 0.2s ease; /* 過渡效果 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); /* 陰影略增強 */
+  }
+  
+  /* 輸入框聚焦效果 */
+  #deviceForm input[type="text"]:focus {
+    outline: none;
+    border-color: #4dabf7; /* 聚焦邊框顏色 */
+    box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.2); /* 聚焦陰影從 2px 放大到 3px */
+  }
+  
+  /* 按鈕樣式 */
+  #deviceForm button {
+    background-color: #4dabf7; /* 按鈕背景 */
+    color: white; /* 文字顏色 */
+    border: none; /* 無邊框 */
+    border-radius: 5px; /* 圓角從 4px 放大到 5px */
+    padding: 10px 20px; /* 內距從 8px 16px 放大到 10px 20px */
+    font-size: 16px; /* 字體從 14px 放大到 16px */
+    cursor: pointer; /* 指標變手型 */
+    transition: background-color 0.2s ease; /* 過渡效果 */
+  }
+  
+  /* 按鈕懸停效果 */
+  #deviceForm button:hover {
+    background-color: #228be6; /* 滑鼠懸停顏色 */
+  }
+  
+  /* 提示文字樣式 */
+  #deviceForm small {
+    font-size: 13px; /* 字體從 12px 放大到 13px */
+    color: #6c757d; /* 灰色文字 */
+    margin-top: -2px; /* 調整位置，從 -4px 改為 -2px */
+    margin-bottom: 10px; /* 底部間距從 8px 放大到 10px */
+  }
+  
+  /* 訊息區塊樣式 */
+  #deviceMessage {
+    margin-top: 12px; /* 頂部間距從 10px 放大到 12px */
+    font-size: 16px; /* 字體從 14px 放大到 16px */
+    color: #28a745; /* 成功訊息顏色 */
+  }
 
 nav ul {
-    list-style-type: none;
-    padding: 0;
     display: flex;
-}
+    padding: 0;
+    list-style: none;
+  }
 
-nav ul li {
+  nav ul li {
     display: inline;
-    margin-right: 20px;
-}
+    margin-right: 25px;
+  }
 
+/* 導航連結基本樣式 */
 nav ul li a {
     text-decoration: none;
     color: #333;
     font-weight: bold;
-    font-size: 1.5rem;  /* 將字型調大到 1.2rem */
-    /* 設定連結狀態改變時，過渡動畫持續 0.3 秒 */
-    transition: box-shadow 0.3s ease, transform 0.3s ease, color 0.3s ease;
-}
-
-nav ul li a:hover {
-    /* 當滑鼠移上連結時增加陰影和放大效果 */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    transform: scale(1.05);
-    color: #2980b9;
-}
+    font-size: 1.5rem;
+    padding: 8px 12px;
+    border-radius: 4px;
+    position: relative;
+    transition: color 0.3s ease;
+  }
+  
+  /* 懸停效果底線 */
+  nav ul li a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #5e72e4;
+    transition: width 0.3s ease;
+  }
+  
+  nav ul li a:hover {
+    color: #5e72e4;
+  }
+  
+  nav ul li a:hover::after {
+    width: 100%;
+  }
+  
+  /* 當前頁面提示效果 */
+  nav ul li a.active {
+    color: #5e72e4; /* 當前頁面使用藍色 */
+  }
+  
+  nav ul li a.active::after {
+    width: 100%; /* 當前頁面顯示完整的底線 */
+  }
 
 /* 設定頁面樣式 */
 .settings-section {
@@ -278,7 +406,7 @@ nav ul li a:hover {
 }
 
 .device-table th, .device-table td {
-    border: 1px solid #ddd;
+    border: 2px solid #ddd;
     padding: 8px;
     text-align: left;
 }
@@ -292,10 +420,230 @@ nav ul li a:hover {
     background-color: #f1f1f1;
 }
 
-.device-section {
-    margin-bottom: 40px; /* 增加間距 */
-}
+
 
 .device-list-section {
     margin-top: 40px; /* 增加間距 */
 }
+
+/* 整體樣式減少留白 */
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh; /* 確保 body 至少填滿視窗高度 */
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.3; /* 從 1.4 改為 1.3，提升文字緊湊度 */
+  }
+  
+  /* 表單容器樣式 */
+  /* 表單容器樣式（保持不變） */
+.form-container {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    max-width: 480px;
+    margin: 8px auto;
+  }
+  
+  /* 標籤樣式（保持不變） */
+  label {
+    display: inline-block;
+    margin-bottom: 2px;
+    font-weight: 600;
+    color: #343a40;
+    font-size: 12px;
+  }
+  
+  /* 下拉選單基本樣式 */
+  select {
+    width: 100%;
+    padding: 6px 8px; /* 調整內距 */
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #495057;
+    background-color: white;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
+    margin-bottom: 6px;
+    appearance: none; /* 移除預設箭頭 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 25px; /* 留出箭頭空間 */
+  }
+  
+  /* 聚焦效果 */
+  select:focus {
+    outline: none;
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+  }
+  
+  /* 時間和日期選擇容器 */
+  #dateRangeContainer, #monthRangeContainer {
+    padding: 4px; /* 從 6px 改為 4px */
+    background-color: #ffffff;
+    border-radius: 4px;
+    border-left: 2px solid #4dabf7;
+    margin-top: 6px; /* 從 8px 改為 6px */
+    margin-bottom: 6px; /* 從 8px 改為 6px */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03); /* 調小陰影 */
+  }
+  
+  /* 年月選擇器的特殊處理 */
+  #selectedYear, #selectedMonth {
+    width: calc(50% - 3px);
+    display: inline-block;
+    margin-bottom: 0;
+  }
+  
+  /* 統計數據部分的樣式 */
+  .statistics-section {
+    position: fixed; /* 固定在視窗中 */
+    top: 50%; /* 垂直居中 */
+    right: 20px; /* 距離右側邊緣 20px */
+    transform: translateY(-50%); /* 精確垂直居中 */
+    width: 250px; /* 統計數據的寬度 */
+    background-color: #f8f9fa; /* 背景色，視覺區隔 */
+    padding: 10px; /* 內距 */
+    border-radius: 6px; /* 圓角 */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* 陰影效果 */
+  }
+  
+  .statistics-section h2 {
+    font-size: 16px; /* 從 14px 放大至 16px */
+    color: #343a40;
+    margin: 8px 0; /* 從 6px 0 放大至 8px 0 */
+    padding-bottom: 6px; /* 從 4px 放大至 6px */
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .info-box {
+    background-color: #f1f8ff;
+    border-radius: 6px;
+    padding: 10px 12px; /* 從 8px 10px 放大至 10px 12px */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-left: 3px solid #228be6;
+  }
+  
+  .info-box p {
+    margin: 6px 0; /* 從 4px 0 放大至 6px 0 */
+    font-size: 14px; /* 從 13px 放大至 14px */
+    color: #495057;
+  }
+  
+  .info-box span {
+    font-weight: 600;
+    color: #1c7ed6;
+    font-size: 15px; /* 新增，放大數據值部分，從隱含的 14px 增至 15px */
+  }
+  .wrapper {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* 區塊共用樣式 */
+#carbonAudit, #blockchainIntro {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 25px 30px;
+    margin: 30px 0;
+    border-left: 4px solid #3498db;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* 標題樣式 */
+  #carbonAudit h2, #blockchainIntro h2 {
+    color: #2c3e50;
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ecf0f1;
+    position: relative;
+  }
+  
+  #carbonAudit h2::after, #blockchainIntro h2::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 80px;
+    height: 3px;
+    background-color: #3498db;
+    border-radius: 3px;
+  }
+  
+  /* 段落樣式 */
+  #carbonAudit p, #blockchainIntro p {
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+  
+  /* 強調段落（假設為碳排放係數） */
+  #carbonAudit p:nth-of-type(4) {
+    background-color: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border-left: 3px solid #2ecc71;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  /* 連結樣式 */
+  #carbonAudit a, #blockchainIntro a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-bottom: 1px dashed rgba(52, 152, 219, 0.5);
+    padding-bottom: 2px;
+  }
+  
+  #carbonAudit a:hover, #blockchainIntro a:hover {
+    color: #2980b9;
+    border-bottom: 1px solid #2980b9;
+  }
+  
+  /* 參考資料樣式 */
+  #carbonAudit p:nth-last-of-type(2),
+  #carbonAudit p:last-of-type,
+  #blockchainIntro p:last-of-type {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    padding-left: 10px;
+    border-left: 2px solid #e0e0e0;
+    margin-top: 10px;
+  }
+  
+  /* 響應式調整 */
+  @media (max-width: 768px) {
+    #carbonAudit, #blockchainIntro {
+      padding: 20px;
+    }
+    #carbonAudit h2, #blockchainIntro h2 {
+      font-size: 1.4rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    #carbonAudit, #blockchainIntro {
+      padding: 15px;
+    }
+    #carbonAudit h2, #blockchainIntro h2 {
+      font-size: 1.3rem;
+    }
+    #carbonAudit p, #blockchainIntro p {
+      font-size: 0.95rem;
+    }
+  }

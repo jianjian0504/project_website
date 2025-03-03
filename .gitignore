@@ -8,3 +8,6 @@ test.sh
 client.html
 simulator.js
 SHOW
+deviceABI.json
+.env
+servertest.js
