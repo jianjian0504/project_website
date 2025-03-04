@@ -25,7 +25,6 @@ function initializePage() {
     const totalPowerElement = document.getElementById('totalPower');
     const totalCarbonElement = document.getElementById('totalCarbon');
     const logoutLink = document.getElementById('logoutLink');
-    const profileLink = document.getElementById('profileLink');
     const profileMenu = document.getElementById('profileMenu');
     const usernameDisplay = document.getElementById('usernameDisplay');
 
@@ -63,19 +62,7 @@ function getFixedColor(deviceId) {
         });
     }
 
-    // 初始化頭像選單
-    if (profileLink && profileMenu) {
-        profileLink.addEventListener('click', (event) => {
-            event.preventDefault();
-            profileMenu.style.display = profileMenu.style.display === 'block' ? 'none' : 'block';
-        });
 
-        document.addEventListener('click', (event) => {
-            if (!profileLink.contains(event.target) && !profileMenu.contains(event.target)) {
-                profileMenu.style.display = 'none';
-            }
-        });
-    }
 
     // 綁定新增裝置表單的提交事件
     const deviceForm = document.getElementById('deviceForm');
@@ -339,16 +326,20 @@ function hexToRGBA(hex, alpha) {
 async function fetchPowerDataAndUpdateChart() {
     try {
         let url = '/power-data';
+        // 取得目前的時間範圍設定，預設為 'hour'
         const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'hour';
-        const chartType = document.getElementById('chartSelector').value; // 獲取當前圖表類型
+        // 取得當前圖表類型：用電量或碳排放量
+        const chartType = document.getElementById('chartSelector').value; 
         console.log('當前時間範圍:', currentTimeRange, '圖表類型:', chartType);
         
         let queryParams = new URLSearchParams();
         queryParams.append('timeRange', currentTimeRange);
         
+        // 根據不同時間範圍，增加額外的查詢參數
         if (currentTimeRange === 'day' && selectedDate.value) {
             queryParams.append('date', selectedDate.value);
         } else if (currentTimeRange === 'month') {
+            // 當時間範圍為月時，從前端選擇器取得指定的年月
             const monthStr = `${selectedYear.value}-${selectedMonth.value}`;
             queryParams.append('month', monthStr);
         }
@@ -356,6 +347,7 @@ async function fetchPowerDataAndUpdateChart() {
         url += '?' + queryParams.toString();
         console.log('請求 URL:', url);
         
+        // 發送 GET 請求獲取數據
         const response = await fetch(url);
         const result = await response.json();
         console.log('收到的數據:', result);
@@ -367,19 +359,22 @@ async function fetchPowerDataAndUpdateChart() {
 
         const carbonFactor = 0.494; // 碳排放係數 kgCO2e/kWh
 
-        // 更新圖表配置
+        // 更新圖表的 Y 軸標題與圖表標題，根據圖表類型做調整
         powerChart.options.scales.y.title.text = chartType === 'power' ? '用電量 (kWh)' : '碳排放量 (kgCO2e)';
         powerChart.options.plugins.title.text = chartType === 'power' ? '裝置用電量趨勢' : '裝置碳排放量趨勢';
 
         if (currentTimeRange === 'hour') {
+            // 處理每小時的數據
             const records = result;
             records.forEach(record => {
+                // 將日期字串轉換為 epoch 毫秒值（用於排序與生成標籤）
                 record.parsedEpoch = new Date(record.date.replace(' ', 'T')).getTime();
                 if (record.device_name) {
                     deviceNameMap[record.device_id] = record.device_name;
                 }
             });
 
+            // 整理各裝置的數據
             const deviceData = {};
             records.forEach(record => {
                 const deviceId = record.device_id;
@@ -389,6 +384,7 @@ async function fetchPowerDataAndUpdateChart() {
                 deviceData[deviceId].push(record);
             });
 
+            // 收集所有裝置的時間標籤（epoch）並排序
             const labelsSet = new Set();
             Object.keys(deviceData).forEach(deviceId => {
                 deviceData[deviceId].sort((a, b) => a.parsedEpoch - b.parsedEpoch);
@@ -402,6 +398,7 @@ async function fetchPowerDataAndUpdateChart() {
                 sortedEpochs = [now - 4 * 60000, now - 3 * 60000, now - 2 * 60000, now - 60000, now];
             }
 
+            // 產生當前小時內 60 分鐘的時間標籤
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth();
@@ -413,6 +410,7 @@ async function fetchPowerDataAndUpdateChart() {
                 currentLabelsArray.push(dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}));
             }
 
+            // 依照使用者選擇的裝置來過濾資料
             let selectedDevices = [];
             if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
                 const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
@@ -429,6 +427,7 @@ async function fetchPowerDataAndUpdateChart() {
                 deviceData["No Data"] = [];
             }
 
+            // 根據選擇的裝置組合數據集
             const datasets = selectedDevices.map(deviceId => {
                 const usageMap = {};
                 (deviceData[deviceId] || []).forEach(record => {
@@ -441,7 +440,7 @@ async function fetchPowerDataAndUpdateChart() {
                 for (let m = 0; m < 60; m++) {
                     const key = m < 10 ? '0' + m : '' + m;
                     dataArray.push(usageMap[key] !== undefined ? usageMap[key] : 0);
-                };
+                }
                 const finalData = chartType === 'power' ? dataArray : dataArray.map(usage => usage * carbonFactor);
                 const color = deviceColors[deviceId] || (deviceColors[deviceId] = getFixedColor(deviceId));
                 const deviceName = deviceNameMap[deviceId] || `裝置 ${deviceId}`;
@@ -458,6 +457,7 @@ async function fetchPowerDataAndUpdateChart() {
             powerChart.data.datasets = datasets;
             powerChart.update();
         } else {
+            // 處理非「hour」的情況（包含 day, week, month）
             const aggregatedRecords = result;
             aggregatedRecords.forEach(record => {
                 if (record.device_name) {
@@ -476,26 +476,35 @@ async function fetchPowerDataAndUpdateChart() {
 
             let labelsArray = [];
             if (currentTimeRange === 'day') {
+                // 為「日」的情況，產生 24 小時的標籤
                 for (let i = 0; i < 24; i++) {
                     labelsArray.push((i < 10 ? '0' + i : i) + ":00");
                 }
             } else if (currentTimeRange === 'week') {
+                // 為「週」的情況，產生本週一到週日的日期標籤
                 let expected = [];
-                for (let i = 6; i >= 0; i--) {
-                    let d = new Date();
-                    d.setDate(d.getDate() - i);
+                let today = new Date();
+                let dayOfWeek = today.getDay(); // 0=星期日, 1=星期一, ..., 6=星期六
+                let monday = new Date(today); 
+                // 如果今天是星期日，則視為本週的最後一天，故回推 6 天；否則回推 dayOfWeek - 1
+                monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                for (let i = 0; i < 7; i++) {
+                    let d = new Date(monday);
+                    d.setDate(monday.getDate() + i);
                     expected.push(d.toISOString().slice(0, 10));
                 }
                 labelsArray = expected;
-            } else if (currentTimeRange === 'month') {
-                let now = new Date();
-                let year = now.getFullYear();
-                let month = now.getMonth();
+            }
+            else if (currentTimeRange === 'month') {
+                // 【修正重點】使用者選取的月份才正確產生標籤，而非系統當前月份
+                let year = parseInt(selectedYear.value) || new Date().getFullYear();
+                // 注意：selectedMonth.value 應為 1~12，轉換成 JavaScript 的月份要 -1
+                let month = parseInt(selectedMonth.value) - 1;
                 let daysInMonth = new Date(year, month + 1, 0).getDate();
                 let expected = [];
                 for (let d = 1; d <= daysInMonth; d++) {
-                    let dayStr = d < 10 ? '0' + d : d;
-                    let monStr = (month + 1) < 10 ? '0' + (month + 1) : (month + 1);
+                    let dayStr = d.toString().padStart(2, '0');
+                    let monStr = (month + 1).toString().padStart(2, '0');
                     expected.push(`${year}-${monStr}-${dayStr}`);
                 }
                 labelsArray = expected;
@@ -503,6 +512,7 @@ async function fetchPowerDataAndUpdateChart() {
                 labelsArray = [new Date().toLocaleString()];
             }
 
+            // 過濾出使用者選擇的裝置資料
             let selectedDevices = [];
             if (deviceSelector && deviceSelector.selectedOptions.length > 0) {
                 const selected = Array.from(deviceSelector.selectedOptions).map(option => option.value);
@@ -519,6 +529,7 @@ async function fetchPowerDataAndUpdateChart() {
                 deviceData["No Data"] = [];
             }
 
+            // 為每個裝置建立數據集
             const datasets = selectedDevices.map(deviceId => {
                 const usageMap = {};
                 (deviceData[deviceId] || []).forEach(record => {
@@ -545,6 +556,7 @@ async function fetchPowerDataAndUpdateChart() {
         console.error('獲取用電資料並更新圖表失敗:', error);
     }
 }
+
 
 // 監聽圖表選擇器變化
 document.addEventListener('DOMContentLoaded', () => {

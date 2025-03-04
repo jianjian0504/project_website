@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profilePicInput = document.getElementById('profilePic');
     const previewImage = document.getElementById('previewImage');
     const logoutLink = document.getElementById('logoutLink');
+    const usernameDisplay = document.getElementById('usernameDisplay');
 
     // 載入現有設定
     async function loadCurrentSettings() {
@@ -28,37 +29,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 previewImage.src = e.target.result;
-                previewImage.dataset.base64 = e.target.result; // 儲存 base64 字串
             };
             reader.readAsDataURL(file);
         }
     });
 
-    // 處理表單提交
+    // 處理表單提交（改用 FormData 傳送 multipart/form-data）
     settingsForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         settingsMessage.textContent = '正在儲存...';
 
-        const data = {
-            email: document.getElementById('email').value,
-            profilePic: previewImage.dataset.base64 || previewImage.src
-        };
+        const formData = new FormData(settingsForm);
 
         try {
             const response = await fetch('/settings', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
+                body: formData
             });
 
             const result = await response.json();
             if (result.success) {
                 settingsMessage.style.color = 'green';
                 settingsMessage.textContent = '設定已儲存並發送確認信！';
-                // 更新頁面上的大頭貼
-                document.querySelector('.profile-pic').src = data.profilePic;
+                if (result.profilePicUrl) {
+                    previewImage.src = result.profilePicUrl;
+                }
             } else {
                 settingsMessage.style.color = 'red';
                 settingsMessage.textContent = result.message || '儲存失敗';
@@ -87,11 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 載入現有設定
     loadCurrentSettings();
-});
 
-// 顯示用戶名稱（保持不變）
-document.addEventListener('DOMContentLoaded', () => {
-    const usernameDisplay = document.getElementById('usernameDisplay');
+    // 顯示用戶名稱
     if (usernameDisplay) {
         fetch('/user-info')
             .then(response => response.json())
