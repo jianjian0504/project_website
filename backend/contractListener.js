@@ -197,7 +197,7 @@ async function startListening() {
 
 // 定期執行
 console.log('正在啟動監聽程序...');
-setInterval(startListening, 6000); // 每分鐘執行一次
+setInterval(startListening, 600000); // 每分鐘執行一次
 
 // 立即執行第一次
 console.log('執行第一次監聽...');
