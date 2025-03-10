@@ -8,13 +8,19 @@
 </head>
 <body>
     <div class="container">
-        <header>
+        <header class="centered-header">
             <h1>戀上碳追蹤</h1>
             <nav>
                 <ul>
                     <li><a href="main.html">總覽</a></li>
                     <li><a href="devices.html">裝置</a></li>
-                    <li><a href="information.html">相關資訊</a></li>
+                    <li>
+                        <a href="#">相關資訊 ▾</a>
+                        <ul class="dropdown">
+                            <li><a href="information_blockchain.html">區塊鏈</a></li>
+                            <li><a href="information.html">碳盤查</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
             <div class="profile-container">
@@ -32,6 +38,7 @@
                 </div>
             </div>
         </header>
+        
         <main class="devices-page">
             <section class="device-section">
                 <h2>新增裝置</h2>

@@ -291,19 +291,20 @@ canvas {
     color: #28a745; /* 成功訊息顏色 */
   }
 
-nav ul {
+  nav ul {
     display: flex;
     padding: 0;
     list-style: none;
   }
-
+  
   nav ul li {
-    display: inline;
+    display: inline-block;       /* 改用 inline-block 以便定位 */
     margin-right: 25px;
+    position: relative;          /* 讓下拉選單以 li 為定位參考 */
   }
-
-/* 導航連結基本樣式 */
-nav ul li a {
+  
+  /* 導航連結基本樣式 */
+  nav ul li a {
     text-decoration: none;
     color: #333;
     font-weight: bold;
@@ -336,60 +337,124 @@ nav ul li a {
   
   /* 當前頁面提示效果 */
   nav ul li a.active {
-    color: #5e72e4; /* 當前頁面使用藍色 */
+    color: #5e72e4;
   }
   
   nav ul li a.active::after {
-    width: 100%; /* 當前頁面顯示完整的底線 */
+    width: 100%;
   }
+  
+  /* 下拉選單樣式 - 調整背景色及寬度 */
+  .dropdown {
+    position: absolute;
+    top: 100%;                /* 緊貼在連結下方 */
+    left: 0;
+    background-color: #f9f9f9;  /* 使用較淺的背景色 */
+    width: 200px;             /* 增加寬度 */
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;            /* 確保下拉選單在最上層 */
+  }
+  
+  .dropdown li {
+    width: 100%;
+  }
+  
+  .dropdown a {
+    padding: 10px;
+    width: 100%;
+    display: block;           /* 讓連結佔滿整個 li 區塊 */
+    color: #333;              /* 深色文字 */
+    text-decoration: none;
+  }
+  
+  .dropdown a:hover {
+    background-color: #eaeaea;  /* 懸停時背景稍微變深 */
+  }
+  
+  /* 顯示下拉選單 */
+  nav ul li:hover .dropdown {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  
+  
 
 /* 設定頁面樣式 */
 .settings-section {
     max-width: 600px;
     margin: 20px auto;
-    padding: 20px;
+    padding: 25px;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    font-family: 'Arial', sans-serif;
 }
 
+/* 表單群組 */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
     font-weight: bold;
+    color: #333;
 }
 
+/* 輸入框樣式 */
 .form-group input[type="email"] {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 10px;
+    font-size: 1.1rem;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+.form-group input[type="email"]:focus {
+    border-color: #4facfe;
+    box-shadow: 0 0 5px rgba(79, 172, 254, 0.5);
+    outline: none;
+}
+
+/* 上傳區域 */
 .profile-upload {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
+/* 頭像預覽 */
 #previewImage {
-    width: 150px;
-    height: 150px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #4facfe;
+    border: 3px solid #4facfe;
+    transition: transform 0.3s ease;
 }
 
+#previewImage:hover {
+    transform: scale(1.05);
+}
+
+/* 設定訊息區塊 */
 #settingsMessage {
     margin-top: 15px;
-    padding: 10px;
-    border-radius: 4px;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 6px;
     text-align: center;
+    background-color: #f4f4f4;
+    color: #333;
 }
 
 
@@ -586,7 +651,7 @@ body {
     color: #555;
     line-height: 1.7;
     margin-bottom: 16px;
-    font-size: 1rem;
+    font-size: 1.4rem;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
   
@@ -619,7 +684,7 @@ body {
   #carbonAudit p:nth-last-of-type(2),
   #carbonAudit p:last-of-type,
   #blockchainIntro p:last-of-type {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     color: #7f8c8d;
     padding-left: 10px;
     border-left: 2px solid #e0e0e0;

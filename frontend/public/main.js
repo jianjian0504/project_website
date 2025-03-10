@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // 獲取數據
             let url = '/power-data';
-            const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'hour';
+            const currentTimeRange = timeRangeSelector ? timeRangeSelector.value : 'day';
             url += '?timeRange=' + currentTimeRange;
             const response = await fetch(url);
             const records = await response.json();
